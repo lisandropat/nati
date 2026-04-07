@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+  .card{background:#fff;border-radius:24px;padding:2rem;max-width:640px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+  .header{text-align:center;margin-bottom:1.5rem}
+  .badge{display:inline-block;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:12px;font-weight:600;letter-spacing:.05em;padding:6px 16px;border-radius:99px;text-transform:uppercase;margin-bottom:12px}
+  h1{font-size:22px;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+  .subtitle{font-size:14px;color:#888;margin-bottom:0}
+  .progress-bar{background:#f0f0f0;border-radius:99px;height:8px;margin-bottom:1.5rem;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#667eea,#764ba2);border-radius:99px;transition:width .4s ease}
+  .progress-label{display:flex;justify-content:space-between;font-size:12px;color:#aaa;margin-bottom:6px}
+  .question-block{margin-bottom:1.5rem}
+  .q-num{font-size:11px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+  .q-text{font-size:16px;font-weight:600;color:#1a1a2e;line-height:1.5;margin-bottom:14px}
+  .options{display:flex;flex-direction:column;gap:10px}
+  .option{border:2px solid #e8e8f0;border-radius:14px;padding:12px 16px;cursor:pointer;font-size:14px;color:#444;transition:all .2s;display:flex;align-items:center;gap:10px;background:#fff}
+  .option:hover:not(.disabled){border-color:#a78bfa;background:#f5f3ff;color:#5b21b6}
+  .option.selected{border-color:#667eea;background:#eef2ff;color:#3730a3}
+  .option.correct{border-color:#22c55e;background:#f0fdf4;color:#15803d}
+  .option.wrong{border-color:#ef4444;background:#fef2f2;color:#b91c1c}
+  .option.disabled{cursor:default}
+  .opt-icon{width:26px;height:26px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+  .option.correct .opt-icon::after{content:'✓'}
+  .option.wrong .opt-icon::after{content:'✕'}
+  .feedback{border-radius:12px;padding:12px 16px;font-size:14px;margin-top:12px;display:none;line-height:1.5}
+  .feedback.show{display:block}
+  .feedback.ok{background:#f0fdf4;color:#15803d;border:1.5px solid #bbf7d0}
+  .feedback.fail{background:#fef2f2;color:#b91c1c;border:1.5px solid #fecaca}
+  .actions{display:flex;justify-content:center;margin-top:1.5rem}
+  .btn{padding:12px 32px;border-radius:99px;border:none;cursor:pointer;font-size:15px;font-weight:600;transition:all .2s}
+  .btn-primary{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+  .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+  .btn-primary:disabled{opacity:.4;cursor:default;transform:none}
+  .btn-ghost{background:#f5f3ff;color:#5b21b6}
+  .btn-ghost:hover{background:#ede9fe}
+  .result-screen{text-align:center;display:none}
+  .result-screen.show{display:block}
+  .question-screen{display:block}
+  .score-circle{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 1.2rem;color:#fff}
+  .score-num{font-size:36px;font-weight:800;line-height:1}
+  .score-denom{font-size:14px;opacity:.8}
+  .result-title{font-size:22px;font-weight:700;color:#1a1a2e;margin-bottom:6px}
+  .result-sub{font-size:14px;color:#888;margin-bottom:1.5rem}
+  .stars{font-size:28px;margin-bottom:12px;letter-spacing:4px}
+  .topic-pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:1.5rem}
+  .pill{font-size:12px;padding:4px 12px;border-radius:99px;font-weight:600}
+  .pill.ok{background:#f0fdf4;color:#15803d}
+  .pill.fail{background:#fef2f2;color:#b91c1c}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <div class="badge">Derecho Procesal</div>
+    <h1>Quiz de práctica</h1>
+    <p class="subtitle">Procedimiento, órganos jurisdiccionales y competencia</p>
+  </div>
+  <div class="progress-label">
+    <span id="prog-text">Pregunta 1 de 12</span>
+    <span id="prog-pct">0%</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+
+  <div class="question-screen" id="q-screen">
+    <div class="question-block">
+      <div class="q-num" id="q-num">Pregunta 1</div>
+      <div class="q-text" id="q-text"></div>
+    </div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-next" disabled onclick="next()">Siguiente →</button>
+    </div>
+  </div>
+
+  <div class="result-screen" id="r-screen">
+    <div class="stars" id="stars"></div>
+    <div class="score-circle">
+      <div class="score-num" id="r-score">0</div>
+      <div class="score-denom" id="r-denom">/12</div>
+    </div>
+    <div class="result-title" id="r-title"></div>
+    <div class="result-sub" id="r-sub"></div>
+    <div class="topic-pills" id="r-pills"></div>
+    <div class="actions" style="gap:12px;flex-wrap:wrap">
+      <button class="btn btn-ghost" onclick="restart()">Reintentar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const Q=[
+  {t:"Procedimiento",q:"¿Cuál es la diferencia fundamental entre procedimiento y proceso?",opts:["El procedimiento es el fin y el proceso es el medio","El procedimiento es el medio que hace posible el proceso, que es el fin","Son sinónimos en el derecho procesal civil","El proceso es el conjunto de actos del tribunal únicamente"],ans:1,fb:"El procedimiento es el sistema racional que determina los actos que deben realizar las partes y el tribunal. Es tributario del proceso: su función es hacer posible que este cumpla su fin (resolver el conflicto)."},
+  {t:"Principios",q:"¿En qué consiste el principio de bilateralidad de la audiencia?",opts:["El tribunal resuelve de plano sin escuchar a nadie","Toda persona afectada por una resolución debe poder ser oída e influir en su contenido","Ambas partes deben estar físicamente presentes en la audiencia","Solo aplica en segunda instancia"],ans:1,fb:"La bilateralidad garantiza que toda persona afectada por una resolución sea oída. Su contraparte es la unilateralidad, donde el tribunal resuelve de plano sin oír a las partes."},
+  {t:"Principios",q:"¿Qué sistema probatorio rige en el proceso penal y laboral chileno?",opts:["Prueba legal o tasada","Libre convicción","Sana crítica","Íntima convicción"],ans:2,fb:"La sana crítica combina el correcto entendimiento humano con principios lógicos permanentes. Es el estándar vigente en materia penal y laboral."},
+  {t:"Principios",q:"¿En qué se diferencia el principio dispositivo del principio de oficialidad?",opts:["Dispositivo: el juez investiga los hechos; oficialidad: las partes aportan las pruebas","Dispositivo: las partes pueden disponer libremente de sus pretensiones; oficialidad: se priva a las partes de ese derecho","Dispositivo aplica solo en lo penal; oficialidad solo en lo civil","Son sinónimos con distinto nombre según el autor"],ans:1,fb:"El principio dispositivo permite a las partes disponer de sus pretensiones (transacción, desistimiento). El principio de oficialidad le quita a las partes esa facultad, reservando al Estado el control del impulso procesal."},
+  {t:"Principios",q:"¿Qué implica el principio de concentración del proceso?",opts:["El proceso se desarrolla en diversas etapas sucesivas y separadas","Todo el proceso se lleva a cabo en una sola audiencia o el mínimo de ellas, requiriendo oralidad e inmediación","El juez puede concentrar pruebas sin dar aviso a las partes","Se concentran solo los trámites ejecutivos en una audiencia"],ans:1,fb:"La concentración busca reunir toda la actividad procesal en una sola audiencia o en el menor número posible. Para funcionar bien exige oralidad e inmediación."},
+  {t:"Principios",q:"¿Qué distingue la inmediación de la mediación procesal?",opts:["Inmediación: el juez está en contacto directo con las partes y pruebas; mediación: el contacto es a través de un intermediario","Inmediación: el proceso es escrito; mediación: el proceso es oral","Inmediación aplica solo en lo penal; mediación solo en lo civil","Son distintos nombres para el mismo principio"],ans:0,fb:"La inmediación supone que el juez percibe directamente las pruebas y el debate (inspección personal, escucha a testigos). La mediación implica que ese contacto se produce a través de un delegado u otro intermediario."},
+  {t:"Principios",q:"¿Cuál es la manifestación del principio de preclusión por 'eventualidad procesal'?",opts:["Se pierde una facultad por haber vencido el plazo legal","Se pierden facultades procesales incompatibles entre sí cuando se ejerce una de ellas","Las partes deben deducir en forma conjunta y simultánea todos los medios de ataque o defensa posibles, so pena de no poder ejercerlos después","Se pierde una facultad por no haberla ejercido dentro del acto que la ley establece para ello"],ans:2,fb:"La eventualidad procesal exige que las partes acumulen en el mismo acto todos los medios de ataque o defensa que tengan, aunque sean incompatibles, so pena de perder los que no plantearon oportunamente."},
+  {t:"Plazos",q:"¿Qué son los plazos fatales en el CPC?",opts:["Plazos que el juez puede prorrogar antes de su vencimiento","Plazos que expiran solo si el tribunal declara la rebeldía","Plazos que expiran por el solo transcurso del tiempo, sin necesidad de declaración","Plazos que corren solo los días hábiles del mes"],ans:2,fb:"Los plazos fatales expiran por el mero transcurso del tiempo. Todos los plazos del CPC son fatales. Los no fatales requieren que el tribunal declare la rebeldía para extinguirse."},
+  {t:"Plazos",q:"¿Cómo se distinguen los plazos continuos de los discontinuos?",opts:["Los continuos no se suspenden en feriados; los discontinuos sí","Los continuos son solo días hábiles; los discontinuos son corridos","Los continuos son fatales y los discontinuos no fatales","Los continuos son legales y los discontinuos son judiciales"],ans:0,fb:"Los plazos continuos corren sin interrupción (típicamente en meses o años). Los discontinuos —como los días del CPC— se suspenden durante los feriados."},
+  {t:"Plazos",q:"¿Cuándo puede prorrogarse un plazo judicial?",opts:["En cualquier momento, incluso después de vencido","Solo antes del vencimiento y con justa causa","Nunca; los plazos judiciales son siempre improrrogables","Solo con acuerdo de ambas partes y autorización del tribunal"],ans:1,fb:"Los plazos judiciales son prorrogables, pero la prórroga debe solicitarse antes de que venza el plazo y debe fundarse en justa causa. Los plazos legales, en cambio, son improrrogables salvo que la ley expresamente lo autorice."},
+  {t:"Abandono",q:"¿Qué efecto produce el abandono del procedimiento en materia civil?",opts:["Se pierde lo obrado y la pretensión","Se pierde solo lo obrado, pero no la pretensión","Opera de oficio sin necesidad de petición de parte","El plazo de paralización exigido es de 30 días"],ans:1,fb:"En lo civil, el abandono extingue únicamente lo actuado en ese proceso, pero no la acción del demandante, quien puede iniciar un nuevo juicio."},
+  {t:"Abandono",q:"¿Cuál es la diferencia entre paralización y suspensión del procedimiento?",opts:["Son sinónimos: ambas detienen el proceso de igual manera","La paralización es inactividad de hecho sin resolución que lo impida; la suspensión es una interrupción válida con causa legal","La paralización la decreta el juez; la suspensión la acuerdan las partes","La paralización aplica solo en penal; la suspensión solo en civil"],ans:1,fb:"La paralización es simple inactividad de hecho. Si supera 6 meses puede declararse el abandono. La suspensión es una interrupción temporal válida (por acuerdo de partes hasta 90 días, por ONI o por prejudicialidad penal)."},
+  {t:"Notificaciones",q:"¿Qué tipo de notificación se usa para la sentencia definitiva de primera instancia?",opts:["Por estado diario","Por avisos","Personal","Por cédula"],ans:3,fb:"La sentencia definitiva de primera o única instancia se notifica por cédula, entregando en el domicilio del notificado copia íntegra de la resolución con los datos para su inteligencia."},
+  {t:"Notificaciones",q:"¿En qué consiste la notificación tácita?",opts:["Se publica en el estado diario del Poder Judicial durante 3 días","La persona realiza en el proceso cualquier gestión distinta de alegar la nulidad, entendiéndose que tomó conocimiento","Se entrega copia de la resolución a persona adulta en el domicilio","El tribunal fija un aviso en la puerta del domicilio del notificado"],ans:1,fb:"La notificación tácita opera cuando el interesado realiza en el juicio cualquier gestión que no sea la de reclamar la nulidad de la notificación, pues esa actuación revela que tomó conocimiento de la resolución (Art. 55 inc. 1 CPC)."},
+  {t:"Notificaciones",q:"¿Cuándo procede la notificación personal subsidiaria?",opts:["Cuando el notificado no es habido en su domicilio tras dos búsquedas en días y horarios distintos","Siempre que la ley exija notificación personal y no se encuentre al notificado en la primera visita","Cuando la residencia del notificado es difícil de determinar","Para todas las resoluciones que no sean sentencia definitiva"],ans:0,fb:"La personal subsidiaria procede cuando el receptor busca al notificado dos veces en días y horarios distintos sin encontrarlo. Entonces entrega copia a persona adulta en el domicilio o fija aviso en la puerta, y luego envía carta certificada dentro de 2 días."},
+  {t:"Notificaciones",q:"¿Qué es la notificación ficta o presunta legal?",opts:["La que se entiende practicada por publicarse en el estado diario","La que opera cuando se declara nula una notificación: la resolución se entiende notificada desde que se notifica el 'cúmplase' de esa nulidad","La que se realiza a través de aviso en el Diario Oficial","La que el receptor practica sin presencia del notificado"],ans:1,fb:"La notificación ficta opera por el solo ministerio de la ley: si se declara nula una notificación, la resolución se entiende notificada desde que se notifica el 'cúmplase' que declara esa nulidad. Se funda en la economía procesal (Art. 55 inc. 2 CPC)."},
+  {t:"Resoluciones",q:"¿Cuáles son los dos efectos propios y exclusivos de las sentencias definitivas e interlocutorias?",opts:["Eficacia y ejecutoriedad","Desasimiento y cosa juzgada","Preclusión y eventualidad procesal","Publicidad y fundabilidad"],ans:1,fb:"Solo las sentencias definitivas e interlocutorias generan desasimiento (el tribunal no puede modificarlas tras notificarlas) y cosa juzgada (acción para exigir cumplimiento y excepción para evitar re-discusión)."},
+  {t:"Resoluciones",q:"¿Cuál es la diferencia entre cosa juzgada formal y cosa juzgada material?",opts:["La formal impide toda discusión posterior; la material permite revisión en juicio posterior","La formal permite cumplimiento provisional y revisión posterior; la material es definitiva e impide toda nueva discusión","La formal aplica solo a sentencias definitivas; la material solo a interlocutorias","Son conceptos equivalentes según la doctrina mayoritaria"],ans:1,fb:"La cosa juzgada formal permite el cumplimiento provisional pero admite revisión en un juicio posterior. La cosa juzgada material produce cumplimiento definitivo e impide cualquier discusión posterior sobre lo mismo."},
+  {t:"Resoluciones",q:"¿Qué es un auto como tipo de resolución judicial?",opts:["Resolución que solo ordena la sustanciación del proceso sin fallar incidentes","Resolución que pone fin a la instancia resolviendo el asunto sometido al tribunal","Resolución que falla un incidente, estableciendo derechos permanentes para las partes","Resolución que recae en un incidente sin establecer derechos permanentes, o cuyos derechos no son permanentes"],ans:3,fb:"El auto recae en un incidente que no establece derechos permanentes para las partes. Se notifica por estado diario y no produce desasimiento ni cosa juzgada, a diferencia de la sentencia interlocutoria."},
+  {t:"Representación",q:"¿Cuál es la sanción por presentar un escrito sin patrocinio de abogado habilitado?",opts:["Se da un plazo de 3 días para subsanar el vicio, conservando la fecha de presentación","El escrito se tiene por no presentado de inmediato, sin posibilidad de corrección","Se devuelve el escrito al presentante para que lo corrija","El tribunal lo admite provisionalmente y notifica al abogado para que firme"],ans:1,fb:"La falta de patrocinio produce el efecto más drástico: el escrito se tiene por no presentado de inmediato. Es distinto de la falta de mandato judicial, que permite 3 días para corregir conservando la fecha."},
+  {t:"Representación",q:"¿Cuáles son las facultades especiales del mandato judicial que requieren mención expresa (Art. 7 inc. 2 CPC)?",opts:["Contestar la demanda, oponer excepciones dilatorias, rendir prueba y apelar","Desistirse en 1ª instancia, aceptar la demanda contraria, absolver posiciones, renunciar a recursos, transigir, comprometer, percibir, entre otras","Todas las facultades ordinarias del mandato más la de delegar el mandato","Solo la facultad de transigir y la de percibir"],ans:1,fb:"Las facultades especiales deben conferirse expresamente porque implican actos de disposición importantes: desistirse, aceptar la demanda contraria, absolver posiciones, renunciar a recursos o plazos, transigir, comprometer, otorgar facultades de arbitrador, aprobar convenios y percibir."},
+  {t:"Actuaciones",q:"¿En qué consiste la modalidad 'con citación' para practicar una actuación judicial?",opts:["El tribunal da traslado de 3 días a la contraparte antes de resolver si accede o no","El tribunal accede, pero la diligencia no puede ejecutarse sino pasados 3 días desde la notificación, lapso en que la contraparte puede oponerse","El tribunal accede y la diligencia puede llevarse a cabo desde la notificación sin ningún plazo de espera","El tribunal decreta la actuación de inmediato sin traslado ni espera"],ans:1,fb:"'Con citación' significa que el tribunal accede a la petición, pero hay un plazo de espera de 3 días desde la notificación. Si la contraparte se opone en ese lapso, se forma un incidente que suspende la diligencia. Ejemplo: término probatorio extraordinario."},
+  {t:"Actuaciones",q:"¿Qué diferencia existe entre la modalidad 'con conocimiento' y 'con audiencia'?",opts:["'Con conocimiento': diligencia procede desde la notificación sin espera; 'con audiencia': tribunal da traslado previo de 3 días y decide con el mérito de ambas partes","'Con conocimiento': tribunal da traslado de 3 días; 'con audiencia': diligencia procede de inmediato","Son sinónimos que describen el mismo mecanismo procesal","'Con conocimiento' aplica solo a diligencias probatorias; 'con audiencia' a medidas cautelares"],ans:0,fb:"'Con conocimiento' es más ágil: el tribunal accede y la diligencia procede desde la notificación. 'Con audiencia' es más garantista: el tribunal primero oye a la contraparte por 3 días y luego decide si accede, convirtiendo la solicitud en una demanda incidental."},
+  {t:"Órganos jurisdiccionales",q:"¿Cuál es la función principal de los Juzgados de Garantía?",opts:["Conocer y fallar el juicio oral penal en salas de 3 miembros","Intervenir en la investigación, cautelando los derechos del imputado y autorizando diligencias","Conocer los recursos de casación en materia penal","Conocer en segunda instancia los recursos de apelación penal"],ans:1,fb:"Los Juzgados de Garantía intervienen durante la investigación, cautelan los derechos del imputado y autorizan las diligencias que puedan afectar garantías constitucionales. También conocen procedimientos abreviados, simplificados y monitorios."},
+  {t:"Órganos jurisdiccionales",q:"¿Cómo se compone un Tribunal de Juicio Oral en lo Penal (TOP) para conocer una causa?",opts:["Un juez unipersonal con apoyo de un consejo técnico","Salas de 3 miembros del tribunal colegiado","Un ministro de la Corte de Apelaciones como tribunal unipersonal de excepción","Un juez de letras con competencia penal especial"],ans:1,fb:"Los TOP son colegiados y funcionan en salas de 3 miembros para conocer y fallar las causas que llegan al juicio oral penal. Son los únicos habilitados para aplicar penas privativas de libertad por este procedimiento."},
+  {t:"Órganos jurisdiccionales",q:"¿Cuál es la diferencia entre un tribunal ordinario y uno especial?",opts:["Los ordinarios integran el Poder Judicial y se rigen por el COT; los especiales no integran el Poder Judicial o integran el PJ pero con estatuto propio","Los ordinarios solo conocen causas civiles; los especiales solo causas penales","Los ordinarios son colegiados; los especiales son siempre unipersonales","Los ordinarios son permanentes; los especiales son siempre temporales"],ans:0,fb:"Los tribunales ordinarios integran el Poder Judicial y se rigen principalmente por el COT. Los especiales pueden o no integrar el PJ pero tienen estatuto propio: Juzgados de Familia, Juzgados del Trabajo, Tribunales Militares, etc."},
+  {t:"Tribunales arbitrales",q:"¿Cuál es la diferencia entre un árbitro de derecho y un árbitro arbitrador?",opts:["El árbitro de derecho falla conforme a equidad; el arbitrador conforme a la ley","El árbitro de derecho se sujeta a las reglas de jueces ordinarios; el arbitrador falla según su prudencia y equidad","El árbitro de derecho solo puede nombrarlo el juez; al arbitrador solo las partes","Se diferencian solo en la tramitación, no en el fallo"],ans:1,fb:"El árbitro de derecho tramita y falla igual que un juez ordinario. El árbitro arbitrador falla según lo que su prudencia y equidad le dicten, sin estar obligado a seguir las reglas del procedimiento ordinario."},
+  {t:"Competencia",q:"¿Qué establece la Regla de la Radicación o Fijeza (Art. 109 COT)?",opts:["El tribunal competente cambia si varía el domicilio del demandado","Una vez radicado el juicio en un tribunal competente, este lo mantiene independientemente de cambios posteriores","El juez puede inhibirse en favor de otro tribunal en cualquier momento","La competencia se fija solo al contestarse la demanda"],ans:1,fb:"La Regla de la Radicación establece que una vez radicado el asunto, cambios posteriores en las circunstancias (como que una parte adquiera fuero) no alteran esa radicación."},
+  {t:"Competencia",q:"¿Cuál es la diferencia entre competencia absoluta y competencia relativa?",opts:["La absoluta determina el tribunal específico; la relativa determina la jerarquía","La absoluta (cuantía, materia, fuero) determina la jerarquía y es irrenunciable; la relativa (territorio) identifica el tribunal específico y puede prorrogarse","Ambas pueden modificarse mediante prórroga","La relativa usa cuantía, materia y fuero; la absoluta usa el territorio"],ans:1,fb:"La competencia absoluta (cuantía, materia, fuero) determina la jerarquía del tribunal y es irrenunciable. La relativa (territorio) afina cuál tribunal específico conoce el asunto y puede prorrogarse por acuerdo de partes."},
+  {t:"Competencia",q:"¿En qué consiste la prórroga tácita de competencia por parte del demandado?",opts:["El demandado firma un acta ante el juez aceptando su competencia","El demandado se apersona al juicio realizando cualquier gestión que no sea reclamar la incompetencia del juez","El demandado no comparece al juicio dentro del plazo legal","El demandado solicita expresamente que el juicio se tramite ante ese tribunal"],ans:1,fb:"El demandado prorroga tácitamente la competencia cuando se apersona al juicio y realiza cualquier gestión que no sea la de reclamar la incompetencia. Al actuar sin impugnar, acepta implícitamente al tribunal."},
+  {t:"Competencia",q:"¿Qué es la competencia delegada y cómo se materializa?",opts:["La que adquieren las partes al prorrogar la competencia relativa del tribunal","La que un tribunal posee por habérsela delegado otro tribunal, y se materializa a través de los exhortos o cartas rogatorias","La que ejerce el tribunal superior al conocer una apelación","La que corresponde a los tribunales arbitrales por designación de las partes"],ans:1,fb:"La competencia delegada es aquella que un tribunal posee porque otro se la ha delegado. Se hace efectiva mediante exhortos o cartas rogatorias, que encomendan una diligencia específica. Es temporal y limitada al acto encomendado."}
+];
+
+let cur=0,score=0,answered=false;
+const labels=['A','B','C','D'];
+
+function render(){
+  const q=Q[cur];
+  document.getElementById('q-num').textContent='Pregunta '+(cur+1);
+  document.getElementById('q-text').textContent=q.q;
+  const pct=Math.round(cur/Q.length*100);
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-text').textContent='Pregunta '+(cur+1)+' de '+Q.length;
+  document.getElementById('prog-pct').textContent=pct+'%';
+  const fb=document.getElementById('feedback');
+  fb.className='feedback';fb.textContent='';
+  document.getElementById('btn-next').disabled=true;
+  answered=false;
+  const opts=document.getElementById('options');
+  opts.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const d=document.createElement('div');
+    d.className='option';
+    d.innerHTML='<div class="opt-icon">'+labels[i]+'</div><span>'+o+'</span>';
+    d.onclick=()=>pick(i,d);
+    opts.appendChild(d);
+  });
+}
+
+function pick(i,el){
+  if(answered)return;
+  answered=true;
+  const q=Q[cur];
+  const allOpts=document.querySelectorAll('.option');
+  allOpts.forEach(o=>o.classList.add('disabled'));
+  if(i===q.ans){
+    el.classList.add('correct');
+    score++;
+    showFeedback(true,q.fb);
+  } else {
+    el.classList.add('wrong');
+    allOpts[q.ans].classList.add('correct');
+    showFeedback(false,q.fb);
+  }
+  document.getElementById('btn-next').disabled=false;
+}
+
+function showFeedback(ok,text){
+  const fb=document.getElementById('feedback');
+  fb.className='feedback show '+(ok?'ok':'fail');
+  fb.textContent=(ok?'✓ Correcto — ':'✗ Incorrecto — ')+text;
+}
+
+function next(){
+  cur++;
+  if(cur>=Q.length){showResult();return;}
+  render();
+}
+
+function showResult(){
+  document.getElementById('q-screen').style.display='none';
+  const rs=document.getElementById('r-screen');
+  rs.classList.add('show');
+  document.getElementById('r-score').textContent=score;
+  document.getElementById('r-denom').textContent='/'+Q.length;
+  const pct=score/Q.length;
+  let title,sub,stars;
+  if(pct===1){title='¡Perfecto!';sub='Dominaste todo el material. ¡Abogado/a en potencia!';stars='⭐⭐⭐'}
+  else if(pct>=.75){title='¡Muy bien!';sub='Sólido conocimiento del derecho procesal.';stars='⭐⭐'}
+  else if(pct>=.5){title='Bien encaminado/a';sub='Repasa los temas marcados y vuelve a intentarlo.';stars='⭐'}
+  else{title='Sigue estudiando';sub='Revisa el material y da otra oportunidad al quiz.';stars='📚'}
+  document.getElementById('stars').textContent=stars;
+  document.getElementById('r-title').textContent=title;
+  document.getElementById('r-sub').textContent=sub;
+  document.getElementById('prog-fill').style.width='100%';
+  document.getElementById('prog-text').textContent='Completado';
+  document.getElementById('prog-pct').textContent='100%';
+}
+
+function restart(){
+  cur=0;score=0;answered=false;
+  document.getElementById('r-screen').classList.remove('show');
+  document.getElementById('q-screen').style.display='block';
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
