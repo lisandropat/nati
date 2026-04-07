@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — Actos Jurídicos Procesales</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+  .card{background:#fff;border-radius:24px;padding:clamp(1.25rem,5vw,2rem);max-width:640px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.35)}
+  .header{text-align:center;margin-bottom:1.5rem}
+  .badge{display:inline-block;background:linear-gradient(135deg,#203a43,#2c5364);color:#fff;font-size:11px;font-weight:600;letter-spacing:.06em;padding:5px 14px;border-radius:99px;text-transform:uppercase;margin-bottom:10px}
+  h1{font-size:clamp(16px,4vw,20px);font-weight:700;color:#1a1a2e;margin-bottom:4px}
+  .subtitle{font-size:13px;color:#888}
+  .progress-bar{background:#f0f0f0;border-radius:99px;height:8px;margin-bottom:1.5rem;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#203a43,#2c8364);border-radius:99px;transition:width .4s ease}
+  .progress-label{display:flex;justify-content:space-between;font-size:12px;color:#aaa;margin-bottom:6px}
+  .q-num{font-size:11px;font-weight:700;color:#2c5364;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+  .q-text{font-size:clamp(14px,3.5vw,16px);font-weight:600;color:#1a1a2e;line-height:1.55;margin-bottom:14px}
+  .options{display:flex;flex-direction:column;gap:9px}
+  .option{border:2px solid #e8e8f0;border-radius:14px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,3vw,14px);color:#444;transition:all .2s;display:flex;align-items:flex-start;gap:10px;background:#fff;text-align:left}
+  .option:hover:not(.disabled){border-color:#2c5364;background:#eef4f7;color:#0f2027}
+  .option.correct{border-color:#22c55e;background:#f0fdf4;color:#15803d}
+  .option.wrong{border-color:#ef4444;background:#fef2f2;color:#b91c1c}
+  .option.disabled{cursor:default}
+  .opt-icon{width:26px;height:26px;min-width:26px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px}
+  .option.correct .opt-icon::after{content:'✓'}
+  .option.wrong .opt-icon::after{content:'✕'}
+  .feedback{border-radius:12px;padding:11px 14px;font-size:clamp(12px,3vw,13px);margin-top:12px;display:none;line-height:1.6}
+  .feedback.show{display:block}
+  .feedback.ok{background:#f0fdf4;color:#15803d;border:1.5px solid #bbf7d0}
+  .feedback.fail{background:#fef2f2;color:#b91c1c;border:1.5px solid #fecaca}
+  .actions{display:flex;justify-content:center;margin-top:1.25rem}
+  .btn{padding:12px clamp(20px,5vw,32px);border-radius:99px;border:none;cursor:pointer;font-size:15px;font-weight:600;transition:all .2s;width:100%;max-width:260px}
+  .btn-primary{background:linear-gradient(135deg,#203a43,#2c5364);color:#fff}
+  .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+  .btn-primary:disabled{opacity:.4;cursor:default;transform:none}
+  .btn-ghost{background:#eef4f7;color:#0f2027}
+  .btn-ghost:hover{background:#d8eaf0}
+  .result-screen{text-align:center;display:none}
+  .result-screen.show{display:block}
+  .score-circle{width:110px;height:110px;border-radius:50%;background:linear-gradient(135deg,#203a43,#2c5364);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 1.2rem;color:#fff}
+  .score-num{font-size:34px;font-weight:800;line-height:1}
+  .score-denom{font-size:13px;opacity:.8}
+  .result-title{font-size:clamp(18px,4vw,22px);font-weight:700;color:#1a1a2e;margin-bottom:6px}
+  .result-sub{font-size:13px;color:#888;margin-bottom:1.5rem;line-height:1.6;padding:0 .5rem}
+  .stars{font-size:26px;margin-bottom:12px;letter-spacing:4px}
+  @media(max-width:400px){body{padding:.5rem}.card{border-radius:18px}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <div class="badge">Derecho Procesal · Tema 13</div>
+    <h1>Actos Jurídicos Procesales</h1>
+    <p class="subtitle">Concepto, elementos, requisitos y formas de decretar actuaciones · 20 preguntas</p>
+  </div>
+  <div class="progress-label">
+    <span id="prog-text">Pregunta 1 de 20</span>
+    <span id="prog-pct">0%</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+
+  <div id="q-screen">
+    <div class="q-num" id="q-num">Pregunta 1</div>
+    <div class="q-text" id="q-text"></div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-next" disabled onclick="next()">Siguiente →</button>
+    </div>
+  </div>
+
+  <div class="result-screen" id="r-screen">
+    <div class="stars" id="stars"></div>
+    <div class="score-circle">
+      <div class="score-num" id="r-score">0</div>
+      <div class="score-denom">/20</div>
+    </div>
+    <div class="result-title" id="r-title"></div>
+    <div class="result-sub" id="r-sub"></div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="restart()">Reintentar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const Q=[
+  {q:"¿Cómo se definen los actos jurídicos procesales?",opts:["Toda resolución que dicta el tribunal para poner fin a la instancia","Toda manifestación de voluntad relativa al desenvolvimiento del proceso, sea cual fuere el sujeto del que emana","Solo los escritos que presentan las partes al tribunal","Los contratos celebrados durante el proceso entre las partes"],ans:1,fb:"Los actos o actuaciones judiciales o procesales son toda manifestación de voluntad relativa al desenvolvimiento del proceso, sea cual fuere el sujeto del que emana: el tribunal, las partes, los terceros o los auxiliares de la justicia. Ejemplos: una notificación, la resolución que recibe la causa a prueba, la realización de un comparendo."},
+  {q:"¿Cuáles son los cuatro requisitos de validez comunes a toda actuación judicial?",opts:["Ser escrita, estar firmada por el juez, contener la fecha y ser notificada a las partes","Ser practicadas por el funcionario que indica la ley, en días y horas hábiles, dejar testimonio escrito en el proceso, y ser autorizadas por el funcionario competente","Ser decretadas con conocimiento, citación o audiencia, ser motivadas y ser comunicadas por el receptor","Contar con patrocinio de abogado, ser presentadas por vía electrónica, ser en idioma castellano y contener una suma"],ans:1,fb:"Los cuatro requisitos de validez comunes son: a) deben ser practicadas por el funcionario que indica la ley; b) deben ser practicadas en días y horas hábiles; c) de toda actuación debe dejarse testimonio escrito en el proceso; y d) deben ser autorizadas por el funcionario competente. Su incumplimiento acarrea la nulidad de la actuación."},
+  {q:"¿Quién practica las actuaciones judiciales como regla general según el art. 70 CPC?",opts:["El secretario del tribunal en todos los casos","El receptor judicial, siempre que esté habilitado","El tribunal que conoce la causa","El ministro de fe designado por las partes"],ans:2,fb:"La regla general, conforme al artículo 70 CPC, es que las actuaciones deben ser practicadas por el tribunal que conoce la causa. Las excepciones son: cuando la ley encomienda la actuación a otro funcionario (como los receptores para notificaciones), cuando la ley permite delegar, y cuando se utilizan exhortos para actuaciones fuera del territorio del tribunal."},
+  {q:"¿Qué son los exhortos y para qué se utilizan?",opts:["Escritos que las partes presentan al tribunal para solicitar una actuación urgente","Comunicaciones que se utilizan para aquellas actuaciones que deben realizarse fuera del lugar donde se sigue el juicio (Art. 171 CPC)","Resoluciones del tribunal superior que ordenan al inferior cómo resolver un asunto","Oficios que el tribunal dirige a organismos públicos para solicitar información"],ans:1,fb:"Los exhortos se utilizan para aquellas actuaciones que deben realizarse fuera del lugar en que se sigue el juicio (Art. 171 CPC). A través de ellos un tribunal delega en otro la práctica de una diligencia específica. También se les denomina cartas rogatorias cuando son internacionales."},
+  {q:"Según el art. 59 CPC, ¿cuáles son los días y horas hábiles para practicar actuaciones judiciales?",opts:["Días hábiles: lunes a viernes; horas hábiles: 9:00 a 18:00","Días hábiles: los no feriados; horas hábiles: las que median entre las 8:00 y las 20:00","Días hábiles: todos los del año excepto domingos; horas hábiles: 8:00 a 22:00","Días hábiles: los no feriados; horas hábiles: 9:00 a 17:00"],ans:1,fb:"El artículo 59 CPC establece que son días hábiles los no feriados, y son horas hábiles las que median entre las 8:00 y las 20:00 horas. La regla general es que las actuaciones judiciales realizadas fuera de estos días y horas son nulas."},
+  {q:"¿Desde cuándo comienza el período de vacaciones judiciales según el art. 313 COT?",opts:["Desde el 15 de enero hasta el último día de febrero","Desde el 1° de febrero y dura hasta el primer día hábil de marzo","Desde el 15 de diciembre hasta el 15 de enero siguiente","Desde el 1° de enero hasta el último día de febrero"],ans:1,fb:"El artículo 313 del COT señala que son días feriados los comprendidos en el tiempo de vacaciones de cada año, que comenzará el 1° de febrero y durará hasta el primer día hábil de marzo. Fuera de ese período, los días feriados son los que indica la ley."},
+  {q:"¿Cómo se tratan los días y horas en materia procesal penal?",opts:["Se aplican las mismas reglas que en materia civil: solo son hábiles los días no feriados entre las 8:00 y 20:00","En asuntos criminales todos los días y horas son hábiles y los plazos no se suspenden por feriados; si un plazo vence en feriado, se extiende hasta las 24 horas del siguiente día no feriado","En materia penal los feriados son hábiles solo para el Ministerio Público, no para el imputado","Los plazos penales se suspenden igual que en civil durante las vacaciones judiciales"],ans:1,fb:"El artículo 14 del Código Procesal Penal establece que todos los días y horas son hábiles para las actuaciones del procedimiento penal y que los plazos no se suspenden por la interposición de días feriados. Si un plazo vence en día feriado, se considera ampliado hasta las 24 horas del día siguiente que no sea feriado."},
+  {q:"¿Puede un tribunal habilitar días y horas inhábiles para practicar actuaciones?",opts:["No, la habilitación de días y horas inhábiles está absolutamente prohibida por el CPC","Sí, a solicitud de parte, cuando hay causas urgentes que lo exijan (Art. 60 CPC)","Sí, pero solo de oficio y únicamente en materia de medidas cautelares","Solo la Corte de Apelaciones puede habilitarlos, no los tribunales de primera instancia"],ans:1,fb:"Sí es posible. El artículo 60 CPC permite que los tribunales habiliten días y horas inhábiles a solicitud de parte cuando hay causas urgentes que lo exijan. Es una facultad discrecional del tribunal, no un derecho absoluto de las partes."},
+  {q:"¿Qué menciones debe contener el testimonio escrito de toda actuación judicial según el art. 61 CPC?",opts:["Solo la firma del juez y del secretario","El día, lugar, mes y año en que se verifica la actuación, las formalidades con que se procedió, y las demás indicaciones que la ley o el tribunal dispongan; luego firman los intervinientes","Solo la resolución dictada y la firma del ministro de fe","La individualización de las partes, la materia del juicio y la firma del abogado patrocinante"],ans:1,fb:"El artículo 61 CPC exige que en el testimonio consten: el día, lugar, mes y año en que se verifica la actuación; las formalidades con que se procedió; las demás indicaciones que la ley o el tribunal dispongan. Después firman quienes intervinieron. Si alguien no sabe o no quiere firmar, se deja constancia; quien no sabe firmar puede dejar su impresión digital pulgar."},
+  {q:"¿Qué ocurre si falta la autorización del funcionario competente en una actuación judicial?",opts:["La actuación se tiene por no presentada y se devuelve a las partes","La resolución es ineficaz (Art. 61 inc. 3 CPC)","La actuación es válida si el juez la ratifica posteriormente","Solo se aplica una sanción disciplinaria al funcionario, pero la actuación mantiene su valor"],ans:1,fb:"Conforme al artículo 61 inciso tercero CPC, si falta la autorización del funcionario que debe dar fe para la validez de la actuación, la resolución es ineficaz. Es el secretario del tribunal quien autoriza las resoluciones que dicta el juez y las presentaciones de las partes, según el art. 380 N° 2 COT."},
+  {q:"¿Qué funcionario autoriza las resoluciones dictadas por el juez y las presentaciones de las partes en materia civil?",opts:["El receptor judicial","El administrador del tribunal","El secretario del tribunal (Art. 380 N° 2 COT)","El relator de la Corte de Apelaciones"],ans:2,fb:"El artículo 380 N° 2 COT establece que es el secretario del tribunal quien debe autorizar las resoluciones que dicta el juez y que recaen en las presentaciones que hacen las partes. Los receptores, en cambio, actúan como ministros de fe en la recepción de la testifical y la absolución de posiciones (Art. 390 inc. 2 COT)."},
+  {q:"¿Cuáles son las cuatro características de los actos jurídicos procesales?",opts:["Son tácitos, bilaterales, informales y no producen cosa juzgada","Son esencialmente solemnes, por regla general unilaterales, dan lugar y forman el proceso, y son autónomos","Son siempre escritos, bilaterales, producen cosa juzgada y son irrevocables","Son orales, colectivos, dependientes entre sí y siempre revocables por el tribunal"],ans:1,fb:"Las cuatro características son: a) son esencialmente solemnes (deben cumplir requisitos legales); b) por regla general son unilaterales (emanan de una sola parte o del juez); c) dan lugar y forman el proceso (los actos se integran unos con otros creando el proceso); y d) son autónomos (son independientes entre sí, aunque estén entrelazados)."},
+  {q:"Cuando una actuación se decreta 'con conocimiento', ¿desde cuándo puede llevarse a efecto?",opts:["Desde que el tribunal dicta la resolución que la autoriza, sin necesidad de notificación","Desde que se notifica la resolución a la parte contraria, sin ningún plazo de espera adicional","Pasados tres días desde la notificación a la parte contraria","Solo después de que la parte contraria declare expresamente que no se opone"],ans:1,fb:"Decretada una diligencia 'con conocimiento', el tribunal accede a ella por la sola petición de parte y puede llevarse a efecto desde que se notifica la resolución a la parte contraria. No hay plazo de espera: basta poner en noticia al contendor lo resuelto para que la diligencia proceda (Art. 69 inc. 2 CPC)."},
+  {q:"Cuando una actuación se decreta 'con citación', ¿qué derecho tiene la parte contraria?",opts:["Puede apelar la resolución ante la Corte de Apelaciones dentro de 5 días","Tiene 3 días desde la notificación para oponerse o deducir observaciones, suspendiéndose la diligencia hasta resolver el incidente si se opone","Puede solicitar al tribunal que revoque la resolución dentro de 10 días","No tiene ningún derecho: la diligencia procede igual aunque se oponga"],ans:1,fb:"Con citación (Art. 69 inc. 1 CPC), la parte contraria tiene 3 días desde la notificación para oponerse o deducir observaciones. Si se opone, la diligencia queda suspendida y la oposición se tramita como incidente. El tribunal decide si mantiene o deja sin efecto la autorización de la diligencia una vez resuelto el incidente."},
+  {q:"¿Cuál es la diferencia fundamental entre decretar una actuación 'con citación' y decretarla 'con audiencia'?",opts:["Con citación el tribunal accede de inmediato y la diligencia espera 3 días; con audiencia el tribunal tampoco accede de inmediato y primero da traslado para oír a la contraparte antes de resolver","Son sinónimos: ambas suponen un plazo de 3 días y el tribunal accede en ambos casos","Con citación el tribunal no accede aún; con audiencia el tribunal accede pero espera 3 días","Con citación aplica solo en primera instancia; con audiencia solo en segunda instancia"],ans:0,fb:"La diferencia clave: 'con citación' el tribunal ya accede a la diligencia pero espera 3 días para ejecutarla (la contraparte puede oponerse en ese lapso). 'Con audiencia' el tribunal no accede de inmediato: primero da traslado de 3 días a la contraparte para que formule oposiciones, y solo después —con el mérito de ambas partes— decide si accede o no a la diligencia solicitada."},
+  {q:"¿Qué ocurre si la parte contraria se opone a una diligencia decretada 'con citación'?",opts:["La oposición no tiene ningún efecto y la diligencia procede igual tras los 3 días","La oposición se tramita como incidente y la diligencia queda suspendida hasta que se resuelva ese incidente","El tribunal debe revocar de inmediato la autorización de la diligencia","La parte que se opone debe consignar una garantía para que se admita su oposición"],ans:1,fb:"Si dentro del plazo de 3 días la parte contraria se opone, esa oposición se tramita como incidente, ordenándose traslado a la parte que pidió la diligencia. La diligencia queda suspendida en tanto no se resuelva el incidente, y el tribunal decide finalmente si mantiene o deja sin efecto su autorización."},
+  {q:"¿En qué actuación judicial el tribunal da traslado a la parte contraria ANTES de decidir si accede o no a la diligencia pedida?",opts:["Con conocimiento","Con citación","Con audiencia","De plano"],ans:2,fb:"Cuando se actúa 'con audiencia', el tribunal no accede desde luego sino que da traslado de la petición a la parte contraria para que formule oposiciones dentro de 3 días. Solo después de conocer los puntos de vista de ambas partes decide si accede o no. Es la modalidad más garantista de las tres."},
+  {q:"¿Qué fórmula debe usar el funcionario al tomar juramento a un concurrente en una actuación judicial (Art. 62 CPC)?",opts:["'Juro por mi honor decir la verdad en todo lo que se me pregunte'","'Juráis por Dios decir verdad acerca de lo que se os va a preguntar'","'Prometo solemnemente decir la verdad y no ocultar nada relevante'","'Declaro bajo juramento que mis dichos son verídicos y completos'"],ans:1,fb:"El artículo 62 CPC establece que el funcionario que autorice la actuación debe interrogar al afectado con la siguiente fórmula: 'juráis por Dios decir verdad acerca de lo que se os va a preguntar'. De ese juramento debe dejarse testimonio en los autos."},
+  {q:"¿Qué condiciones debe reunir el intérprete que interviene en una actuación judicial y qué carácter tiene?",opts:["Debe ser abogado habilitado y actúa como representante de la parte extranjera","Debe reunir las condiciones necesarias para ser perito, tiene carácter de ministro de fe y debe prestar juramento antes de la diligencia","Solo debe acreditar dominio del idioma ante el tribunal, sin exigirse condiciones adicionales","Debe ser funcionario del Poder Judicial designado por la Corte Suprema"],ans:1,fb:"Según el artículo 63 CPC, el intérprete debe reunir las condiciones necesarias para ser perito y tiene el carácter de ministro de fe. Antes de llevar a cabo la diligencia debe prestar juramento conforme al artículo 62 CPC. Se recurre al intérprete oficial si existe; si no, al que designe el tribunal. Son los del Departamento de Traductores e Intérpretes del Ministerio de Relaciones Exteriores."},
+  {q:"¿Cuál de las siguientes afirmaciones sobre la notificación personal en días inhábiles es correcta?",opts:["Nunca puede realizarse en día inhábil, pues toda actuación requiere día hábil sin excepción","La notificación personal puede hacerse cualquier día entre las 6:00 y las 22:00 cuando se practica en la morada o lugar habitual de trabajo; si el día es inhábil, los plazos comienzan a correr a las 0 horas del siguiente día hábil","La notificación personal en día inhábil es nula de pleno derecho","Solo puede realizarse en día hábil si el notificado reside en zona rural"],ans:1,fb:"El artículo 41 incisos 2° y 3° CPC establece que la notificación personal puede hacerse cualquier día entre las 6:00 y las 22:00 cuando se practica en la morada o lugar habitual de trabajo, o recinto privado de libre acceso al público. Si el día es inhábil, los plazos que deban contarse desde la notificación comienzan a correr a las 0 horas del día siguiente hábil."}
+];
+
+const labels=['A','B','C','D'];
+let cur=0,score=0,answered=false;
+
+function render(){
+  const q=Q[cur];
+  const pct=Math.round(cur/Q.length*100);
+  document.getElementById('q-num').textContent='Pregunta '+(cur+1);
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-text').textContent='Pregunta '+(cur+1)+' de '+Q.length;
+  document.getElementById('prog-pct').textContent=pct+'%';
+  const fb=document.getElementById('feedback');
+  fb.className='feedback';fb.textContent='';
+  document.getElementById('btn-next').disabled=true;
+  answered=false;
+  const opts=document.getElementById('options');
+  opts.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const d=document.createElement('div');
+    d.className='option';
+    d.innerHTML='<div class="opt-icon">'+labels[i]+'</div><span>'+o+'</span>';
+    d.onclick=()=>pick(i,d);
+    opts.appendChild(d);
+  });
+}
+
+function pick(i,el){
+  if(answered)return;
+  answered=true;
+  const q=Q[cur];
+  document.querySelectorAll('.option').forEach(o=>o.classList.add('disabled'));
+  if(i===q.ans){el.classList.add('correct');score++;showFb(true,q.fb);}
+  else{el.classList.add('wrong');document.querySelectorAll('.option')[q.ans].classList.add('correct');showFb(false,q.fb);}
+  document.getElementById('btn-next').disabled=false;
+}
+
+function showFb(ok,text){
+  const fb=document.getElementById('feedback');
+  fb.className='feedback show '+(ok?'ok':'fail');
+  fb.textContent=(ok?'✓ Correcto — ':'✗ Incorrecto — ')+text;
+}
+
+function next(){
+  cur++;
+  if(cur>=Q.length){showResult();return;}
+  render();
+}
+
+function showResult(){
+  document.getElementById('q-screen').style.display='none';
+  document.getElementById('r-screen').classList.add('show');
+  document.getElementById('r-score').textContent=score;
+  document.getElementById('prog-fill').style.width='100%';
+  document.getElementById('prog-text').textContent='Completado';
+  document.getElementById('prog-pct').textContent='100%';
+  const pct=score/Q.length;
+  let title,sub,stars;
+  if(pct===1){title='¡Perfecto!';sub='Dominas todos los actos jurídicos procesales. ¡Impecable!';stars='⭐⭐⭐'}
+  else if(pct>=.75){title='¡Muy bien!';sub='Sólido manejo del Tema 13. Repasa los detalles y lo tenés dominado.';stars='⭐⭐'}
+  else if(pct>=.5){title='Vas por buen camino';sub='Revisa los requisitos de validez y las formas de decretar actuaciones.';stars='⭐'}
+  else{title='Sigue estudiando';sub='Vuelve a repasar el Tema 13 y dale otra vuelta al quiz.';stars='📚'}
+  document.getElementById('stars').textContent=stars;
+  document.getElementById('r-title').textContent=title;
+  document.getElementById('r-sub').textContent=sub;
+}
+
+function restart(){
+  cur=0;score=0;answered=false;
+  document.getElementById('r-screen').classList.remove('show');
+  document.getElementById('q-screen').style.display='block';
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
