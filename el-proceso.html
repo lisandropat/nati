@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — El Proceso Judicial</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:linear-gradient(135deg,#11998e,#38ef7d);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+  .card{background:#fff;border-radius:24px;padding:clamp(1.25rem,5vw,2rem);max-width:640px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.18)}
+  .header{text-align:center;margin-bottom:1.5rem}
+  .badge{display:inline-block;background:linear-gradient(135deg,#11998e,#38ef7d);color:#fff;font-size:11px;font-weight:600;letter-spacing:.06em;padding:5px 14px;border-radius:99px;text-transform:uppercase;margin-bottom:10px}
+  h1{font-size:clamp(17px,4vw,21px);font-weight:700;color:#1a1a2e;margin-bottom:4px}
+  .subtitle{font-size:13px;color:#888}
+  .progress-bar{background:#f0f0f0;border-radius:99px;height:8px;margin-bottom:1.5rem;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#11998e,#38ef7d);border-radius:99px;transition:width .4s ease}
+  .progress-label{display:flex;justify-content:space-between;font-size:12px;color:#aaa;margin-bottom:6px}
+  .q-num{font-size:11px;font-weight:700;color:#11998e;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+  .q-text{font-size:clamp(14px,3.5vw,16px);font-weight:600;color:#1a1a2e;line-height:1.55;margin-bottom:14px}
+  .options{display:flex;flex-direction:column;gap:9px}
+  .option{border:2px solid #e8e8f0;border-radius:14px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,3vw,14px);color:#444;transition:all .2s;display:flex;align-items:flex-start;gap:10px;background:#fff;text-align:left}
+  .option:hover:not(.disabled){border-color:#11998e;background:#edfaf5;color:#065f46}
+  .option.correct{border-color:#22c55e;background:#f0fdf4;color:#15803d}
+  .option.wrong{border-color:#ef4444;background:#fef2f2;color:#b91c1c}
+  .option.disabled{cursor:default}
+  .opt-icon{width:26px;height:26px;min-width:26px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px}
+  .option.correct .opt-icon::after{content:'✓'}
+  .option.wrong .opt-icon::after{content:'✕'}
+  .feedback{border-radius:12px;padding:11px 14px;font-size:clamp(12px,3vw,13px);margin-top:12px;display:none;line-height:1.6}
+  .feedback.show{display:block}
+  .feedback.ok{background:#f0fdf4;color:#15803d;border:1.5px solid #bbf7d0}
+  .feedback.fail{background:#fef2f2;color:#b91c1c;border:1.5px solid #fecaca}
+  .actions{display:flex;justify-content:center;margin-top:1.25rem}
+  .btn{padding:12px clamp(20px,5vw,32px);border-radius:99px;border:none;cursor:pointer;font-size:15px;font-weight:600;transition:all .2s;width:100%;max-width:260px}
+  .btn-primary{background:linear-gradient(135deg,#11998e,#38ef7d);color:#fff}
+  .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+  .btn-primary:disabled{opacity:.4;cursor:default;transform:none}
+  .btn-ghost{background:#edfaf5;color:#065f46}
+  .btn-ghost:hover{background:#d1fae5}
+  .result-screen{text-align:center;display:none}
+  .result-screen.show{display:block}
+  .score-circle{width:110px;height:110px;border-radius:50%;background:linear-gradient(135deg,#11998e,#38ef7d);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 1.2rem;color:#fff}
+  .score-num{font-size:34px;font-weight:800;line-height:1}
+  .score-denom{font-size:13px;opacity:.85}
+  .result-title{font-size:clamp(18px,4vw,22px);font-weight:700;color:#1a1a2e;margin-bottom:6px}
+  .result-sub{font-size:13px;color:#888;margin-bottom:1.5rem;line-height:1.6;padding:0 .5rem}
+  .stars{font-size:26px;margin-bottom:12px;letter-spacing:4px}
+  @media(max-width:400px){body{padding:.5rem}.card{border-radius:18px}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <div class="badge">Derecho Procesal · Tema 9</div>
+    <h1>El Proceso Judicial</h1>
+    <p class="subtitle">Concepto, naturaleza jurídica, formas de solución de conflictos y elementos · 20 preguntas</p>
+  </div>
+  <div class="progress-label">
+    <span id="prog-text">Pregunta 1 de 20</span>
+    <span id="prog-pct">0%</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+
+  <div id="q-screen">
+    <div class="q-num" id="q-num">Pregunta 1</div>
+    <div class="q-text" id="q-text"></div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-next" disabled onclick="next()">Siguiente →</button>
+    </div>
+  </div>
+
+  <div class="result-screen" id="r-screen">
+    <div class="stars" id="stars"></div>
+    <div class="score-circle">
+      <div class="score-num" id="r-score">0</div>
+      <div class="score-denom">/20</div>
+    </div>
+    <div class="result-title" id="r-title"></div>
+    <div class="result-sub" id="r-sub"></div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="restart()">Reintentar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const Q=[
+  {q:"¿Cómo define Eduardo Couture el proceso judicial?",opts:["El conjunto de escritos, documentos y actuaciones que se presentan cronológicamente en un expediente","Una secuencia o serie de actos que se desenvuelven progresivamente, con el objeto de resolver mediante un juicio de la autoridad el conflicto sometido a su decisión","El conjunto de formalidades a que deben someterse los tribunales y las partes que concurren ante ellos","La facultad de cada juez para conocer los negocios que la ley ha colocado dentro de la esfera de sus atribuciones"],ans:1,fb:"Eduardo Couture define el proceso como una secuencia o serie de actos que se desenvuelven progresivamente, con el objeto de resolver, mediante un juicio de la autoridad, el conflicto sometido a su decisión. Esta definición destaca el carácter dinámico y progresivo del proceso."},
+  {q:"¿Cuáles son los tres pilares fundamentales del Derecho Procesal según la doctrina?",opts:["Competencia, procedimiento y recurso","Jurisdicción, acción y proceso","Demanda, contestación y sentencia","Tribunal, partes y expediente"],ans:1,fb:"La doctrina procesal identifica como los tres pilares fundamentales del Derecho Procesal la jurisdicción, la acción y el proceso. Jurisdicción es la actividad del Estado; acción es el medio de los particulares para activarla; y proceso es la forma en que esa actividad se desarrolla."},
+  {q:"¿En qué consiste la teoría del proceso como relación jurídica?",opts:["El proceso es un conjunto de expectativas, posibilidades y cargas de cada parte en atención al resultado esperado","El proceso es una relación jurídica constituida por derechos y obligaciones recíprocas de las partes entre sí y con el tribunal, que nace en todo proceso","El proceso es una institución que reduce a unidad la multiplicidad de relaciones jurídicas","El proceso es el medio idóneo del Estado para satisfacer pretensiones procesales"],ans:1,fb:"Según esta teoría —cuyo principal expositor es Eduardo Couture—, el proceso es una relación jurídica en cuanto existen varios sujetos (actor, demandado y juez) investidos de poderes determinados por la ley, que actúan en vista de la obtención de un fin: la solución del conflicto. Es el conjunto de derechos y obligaciones recíprocas de las partes entre sí y con el tribunal."},
+  {q:"¿Quiénes son los sujetos del proceso según Couture en la teoría de la relación jurídica?",opts:["El actor, el demandado y el juez","El abogado, el cliente y el secretario del tribunal","Las partes, los terceros y los auxiliares de la justicia","El tribunal, el Ministerio Público y el imputado"],ans:0,fb:"Para Couture, los sujetos de la relación jurídica procesal son el actor, el demandado y el juez. Sus poderes son las facultades que la ley les confiere para la realización del proceso, su esfera de actuación es la jurisdicción, y el fin es la solución del conflicto de intereses."},
+  {q:"¿Cómo describe Niceto Alcalá Zamora y Castillo la relación jurídica procesal?",opts:["Como un triángulo cuyos vértices son el actor, el demandado y el juez","Como una medalla cuyo anverso está constituido por el derecho y el reverso por la obligación","Como una institución de Derecho Público que une las voluntades particulares bajo una idea común","Como una situación jurídica de expectativas y cargas para cada parte"],ans:1,fb:"Niceto Alcalá Zamora y Castillo usa una metáfora para describir la relación jurídica: es igual a una medalla cuyo anverso está constituido por el derecho y el reverso por la obligación. Siempre que existe esa correlación derecho-obligación estamos ante una relación jurídica."},
+  {q:"¿En qué consiste la teoría del proceso como situación jurídica, propuesta por James Goldschmidt?",opts:["El proceso es una relación jurídica de derechos y obligaciones entre actor, demandado y juez","El proceso es el conjunto de actividades relacionadas entre sí por el vínculo de una idea común","El proceso es un conjunto de expectativas, posibilidades, cargas y liberaciones de cargas de cada parte en atención al resultado que espera o teme obtener","El proceso es el medio de que se vale el Estado para ejercer la función jurisdiccional"],ans:2,fb:"James Goldschmidt reemplaza la noción de relación jurídica (derecho-obligación) por la de situación jurídica, definida como el conjunto de expectativas, posibilidades, cargas y liberaciones de cargas de cada una de las partes en atención al resultado que el actor espera o el demandado teme obtener en el proceso."},
+  {q:"¿Cuál es la diferencia fundamental entre la 'carga procesal' y la 'obligación' según Goldschmidt?",opts:["La carga es una conducta de realización necesaria; la obligación es solo facultativa","La carga es una facultad cuya no realización lleva aparejado un riesgo para el propio interés; la obligación es una conducta necesaria que tutela el interés ajeno y cuyo incumplimiento genera un derecho del acreedor","Carga y obligación son sinónimos en el proceso; Goldschmidt los usa indistintamente","La carga la impone el juez; la obligación nace del contrato entre las partes"],ans:1,fb:"Goldschmidt distingue tres aspectos: 1) La carga es una facultad (no realizarla implica riesgo, no sanción); la obligación exige una conducta necesaria. 2) La carga tutela el propio interés; la obligación tutela un interés ajeno. 3) De la carga insatisfecha no surge derecho de nadie, solo un perjuicio para quien no la asumió; de la obligación incumplida surge un derecho del acreedor."},
+  {q:"¿Cuáles son ejemplos de cargas procesales según Goldschmidt?",opts:["Pagar las costas del juicio y cumplir la sentencia","Probar los hechos alegados, contestar la demanda, tachar a un testigo o impugnar un documento","Comparecer personalmente ante el tribunal y designar abogado patrocinante","Notificar las resoluciones a la contraparte y presentar los escritos en plazo"],ans:1,fb:"Goldschmidt señala que en el proceso no hay obligación de probar ni de contestar la demanda, ni de tachar a un testigo o de impugnar un documento: son cargas procesales. Si no se asumen, la consecuencia no es una sanción impuesta por el Estado sino un riesgo o perjuicio para la propia parte que omitió la conducta."},
+  {q:"¿En qué consiste la teoría del proceso como institución jurídica?",opts:["El proceso es una relación jurídica de derechos y obligaciones entre actor, demandado y juez","El proceso es el conjunto de actividades relacionadas entre sí por el vínculo de una idea común y objetiva, a la que se adhieren las diversas voluntades particulares de los sujetos intervinientes","El proceso es una situación jurídica de expectativas, posibilidades y cargas","El proceso es el instrumento del Estado para ejercer su función jurisdiccional exclusivamente en materia penal"],ans:1,fb:"La teoría de la institución jurídica —expuesta principalmente por Jaime Guasp— entiende que el proceso contiene verdaderamente derechos jurídicos y deberes. Como hay más de una relación jurídica, es preciso reducirlas a una unidad superior que proporciona la institución: el conjunto de actividades relacionadas por el vínculo de una idea común y objetiva, a la que se adhieren las voluntades particulares."},
+  {q:"¿Qué es la autotutela o autodefensa como forma de solución de conflictos?",opts:["La resolución del conflicto por un tercero imparcial que impone su decisión a las partes","La sumisión o renuncia parcial o total de una de las partes en favor de la otra","La reacción directa y personal de quien se hace justicia por sí mismo, imponiendo unilateralmente su decisión a la otra parte","La intervención espontánea de un tercero que propone una solución sin que las partes estén obligadas a aceptarla"],ans:2,fb:"La autotutela (o autodefensa) es la reacción directa y personal de quien se hace justicia por sí mismo. La solución del conflicto se realiza unilateralmente por una de las partes que impone su decisión a la otra. No existe un tercero imparcial y puede provocar una solución violenta. Está prohibida como regla general; solo se permite excepcionalmente (huelga legal, derecho legal de retención)."},
+  {q:"¿Por qué la autotutela está prohibida como regla general en el Derecho?",opts:["Porque vulnera la competencia exclusiva de los árbitros para resolver conflictos","Porque provoca soluciones violentas al no existir un tercero imparcial y puede llegar a constituir la comisión de un delito","Porque infringe el principio de bilateralidad de la audiencia","Porque solo puede ser ejercida por el Estado a través de sus órganos jurisdiccionales"],ans:1,fb:"La autotutela está prohibida porque provoca soluciones violentas: uno o ambos sujetos en conflicto resuelven la controversia mediante acción directa, sin tercero imparcial. Este medio puede llegar a constituir la comisión de un delito. Se admite excepcionalmente, por ejemplo en la huelga legal y en el derecho legal de retención."},
+  {q:"¿Qué es la autocomposición y cuáles son sus formas?",opts:["La resolución del conflicto por un tercero que impone su decisión; sus formas son el arbitraje y la justicia ordinaria","La sumisión o renuncia total o parcial del derecho de una parte en favor de la otra, que puede ser unilateral (desistimiento, allanamiento) o bilateral (transacción, avenimiento, conciliación)","La reacción directa de una de las partes que impone su voluntad; sus formas son la huelga y la retención","La intervención del Estado mediante sus tribunales para resolver el conflicto con eficacia de cosa juzgada"],ans:1,fb:"La autocomposición consiste en la sumisión o renuncia total o parcial del derecho de una parte en favor de la otra. Es unilateral cuando las concesiones provienen de una sola parte (desistimiento, allanamiento). Es bilateral cuando provienen de ambas partes (transacción, avenimiento, conciliación). El conflicto se resuelve por obra de las propias partes, aunque puede intervenir un tercero."},
+  {q:"¿En qué se diferencia la mediación de la conciliación como intervención de un tercero en la autocomposición?",opts:["La mediación implica que el tercero impone la solución; la conciliación es solo una sugerencia del juez","En la mediación el tercero interviene espontáneamente y las partes no se comprometen a aceptar la solución; en la conciliación el tercero es llamado por las partes y estas se comprometen a aceptar lo que él imponga","Mediación y conciliación son sinónimos: en ambas el tercero impone su decisión","La mediación opera solo en conflictos de familia; la conciliación solo en conflictos civiles patrimoniales"],ans:1,fb:"Cuando el tercero interviene de manera espontánea (sin ser llamado), estamos ante la mediación o buenos oficios: las partes no se comprometen a aceptar la solución y conservan su ulterior libertad de acción. Cuando el tercero es llamado por las partes, estamos ante la conciliación o el arbitraje: las partes sí se comprometen a aceptar la solución que el tercero imponga."},
+  {q:"¿Qué es la heterocomposición?",opts:["La solución del conflicto por las propias partes mediante concesiones recíprocas","La reacción directa y personal de quien se hace justicia por sí mismo","La solución del conflicto por un tercero que impone su decisión a las partes, quienes quedan judicialmente obligadas ante esa decisión","La intervención espontánea de un tercero que propone una solución sin poder imponerla"],ans:2,fb:"La heterocomposición es la forma de solución de conflictos en que un tercero impone la solución a las partes. En consecuencia, el litigio no se resuelve por obra de las partes: los terceros quedan judicialmente obligados ante la decisión del tercero. Puede realizarse a título de arbitraje o a través de la justicia ordinaria."},
+  {q:"¿Cuáles son los cuatro elementos constitutivos del proceso judicial?",opts:["Demanda, contestación, prueba y sentencia","Existencia de una controversia de orden jurídico, que la causa sea actual, que se suscite entre partes y que exista un tribunal que resuelva esa controversia","Actor, demandado, juez y ministro de fe","Competencia, capacidad de las partes, emplazamiento y formalidades legales"],ans:1,fb:"Los elementos constitutivos del proceso judicial son: a) existencia de una controversia de orden jurídico; b) que la causa sea actual; c) que la causa se suscite entre partes; y d) que exista un tribunal que resuelva esa controversia. A estos se suman los elementos o condiciones de validez: competencia, capacidad de las partes y observancia de las formalidades legales."},
+  {q:"¿Cuáles son los tres requisitos de validez de la relación procesal?",opts:["Demanda escrita, patrocinio de abogado y pago de la tasa judicial","Presentación de la demanda, el proveído del tribunal que la tenga por presentada y confiera traslado, y el emplazamiento del demandado","Competencia del tribunal, individualización del demandado y firma del actor","Citación al demandado, fijación de audiencia y designación de perito"],ans:1,fb:"Para que la relación procesal sea válida se requiere: 1°) la presentación de la demanda; 2°) el proveído del tribunal que la tenga por presentada y de la cual se confiera traslado al demandado; y 3°) el emplazamiento del demandado. Estos tres requisitos son esenciales para que el proceso nazca válidamente."},
+  {q:"¿Cuál es la diferencia entre proceso, procedimiento y expediente?",opts:["Son sinónimos que describen el mismo fenómeno desde distintos ángulos","Proceso: secuencia de actos para resolver el conflicto; procedimiento: conjunto de formalidades a que deben someterse tribunales y partes; expediente: materialidad del proceso (escritos, documentos y actuaciones ordenados cronológicamente)","Proceso: la resolución final del conflicto; procedimiento: los recursos de impugnación; expediente: la carpeta física del tribunal","Proceso y expediente son sinónimos; procedimiento es la etapa de prueba del proceso"],ans:1,fb:"Son tres conceptos distintos: el proceso es la secuencia de actos que se desenvuelven para resolver el conflicto; el procedimiento es el conjunto de formalidades específicas a que deben someterse los tribunales y las partes que plantean pretensiones; y el expediente es la materialidad del proceso: el conjunto de escritos, documentos y actuaciones de toda clase que se presentan o verifican en el proceso, ordenados cronológicamente."},
+  {q:"¿Por qué el proceso es considerado un instrumento de la función jurisdiccional del Estado?",opts:["Porque permite al Estado recaudar fondos mediante el cobro de tasas judiciales","Porque es el medio que permite a los particulares poner en movimiento la actividad jurisdiccional del Estado para resolver conflictos jurídicos, y es la forma en que esa actividad se desarrolla","Porque reemplaza la voluntad de las partes por la voluntad del Estado en todos los actos jurídicos","Porque a través de él el Estado ejerce su potestad tributaria y sancionatoria"],ans:1,fb:"El proceso es un instrumento porque es el medio de que se vale la actividad jurisdiccional del Estado para desarrollarse. Implica que el Estado debe desarrollar una determinada actividad para solucionar conflictos jurídicos (función jurisdiccional), que los particulares pueden poner en movimiento (acción), y que esa actividad se desarrolla mediante un proceso."},
+  {q:"¿Qué se entiende por 'carga procesal' según la teoría de Goldschmidt y en qué se diferencia de una obligación?",opts:["Es un deber impuesto por la ley cuyo incumplimiento genera una sanción estatal; se diferencia de la obligación en que solo aplica al demandado","Es una facultad cuya no realización conlleva un riesgo para el propio interés de la parte; a diferencia de la obligación —que tutela un interés ajeno y cuyo incumplimiento hace nacer un derecho del acreedor—, la carga insatisfecha solo genera un perjuicio para quien no la cumplió","Es el deber del juez de impulsar el proceso de oficio; se diferencia de la obligación de las partes en que el juez no puede ser compelido a cumplirla","Son sinónimos en el proceso; Goldschmidt los usa de manera intercambiable"],ans:1,fb:"La carga procesal es una facultad: si no se ejerce, la consecuencia no es una sanción sino un riesgo o perjuicio para la propia parte (no para otra). En cambio, la obligación exige una conducta de realización necesaria, tutela un interés ajeno y su incumplimiento hace nacer un derecho del acreedor. Ejemplos de cargas: probar, contestar la demanda, tachar testigos, impugnar documentos."},
+  {q:"Según la clasificación de Niceto Alcalá Zamora y Castillo, ¿cuáles son los tres medios de solución de conflictos con trascendencia jurídica?",opts:["Negociación, mediación y arbitraje","Autotutela o autodefensa, autocomposición y heterocomposición","Conciliación, transacción y sentencia judicial","Desistimiento, allanamiento y transacción"],ans:1,fb:"Niceto Alcalá Zamora y Castillo clasifica los medios de solución de conflictos con trascendencia jurídica en: 1) autotutela o autodefensa (quien se hace justicia por sí mismo, solución violenta y unilateral); 2) autocomposición (sumisión o renuncia de una parte, resuelta por las propias partes); y 3) heterocomposición (un tercero impone la solución, ya sea árbitro o justicia ordinaria)."}
+];
+
+const labels=['A','B','C','D'];
+let cur=0,score=0,answered=false;
+
+function render(){
+  const q=Q[cur];
+  const pct=Math.round(cur/Q.length*100);
+  document.getElementById('q-num').textContent='Pregunta '+(cur+1);
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-text').textContent='Pregunta '+(cur+1)+' de '+Q.length;
+  document.getElementById('prog-pct').textContent=pct+'%';
+  const fb=document.getElementById('feedback');
+  fb.className='feedback';fb.textContent='';
+  document.getElementById('btn-next').disabled=true;
+  answered=false;
+  const opts=document.getElementById('options');
+  opts.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const d=document.createElement('div');
+    d.className='option';
+    d.innerHTML='<div class="opt-icon">'+labels[i]+'</div><span>'+o+'</span>';
+    d.onclick=()=>pick(i,d);
+    opts.appendChild(d);
+  });
+}
+
+function pick(i,el){
+  if(answered)return;
+  answered=true;
+  const q=Q[cur];
+  document.querySelectorAll('.option').forEach(o=>o.classList.add('disabled'));
+  if(i===q.ans){el.classList.add('correct');score++;showFb(true,q.fb);}
+  else{el.classList.add('wrong');document.querySelectorAll('.option')[q.ans].classList.add('correct');showFb(false,q.fb);}
+  document.getElementById('btn-next').disabled=false;
+}
+
+function showFb(ok,text){
+  const fb=document.getElementById('feedback');
+  fb.className='feedback show '+(ok?'ok':'fail');
+  fb.textContent=(ok?'✓ Correcto — ':'✗ Incorrecto — ')+text;
+}
+
+function next(){
+  cur++;
+  if(cur>=Q.length){showResult();return;}
+  render();
+}
+
+function showResult(){
+  document.getElementById('q-screen').style.display='none';
+  document.getElementById('r-screen').classList.add('show');
+  document.getElementById('r-score').textContent=score;
+  document.getElementById('prog-fill').style.width='100%';
+  document.getElementById('prog-text').textContent='Completado';
+  document.getElementById('prog-pct').textContent='100%';
+  const pct=score/Q.length;
+  let title,sub,stars;
+  if(pct===1){title='¡Perfecto!';sub='Dominas el proceso judicial de punta a punta. ¡Excelente!';stars='⭐⭐⭐'}
+  else if(pct>=.75){title='¡Muy bien!';sub='Sólido manejo del Tema 9. Repasa los detalles de las teorías y lo clavás.';stars='⭐⭐'}
+  else if(pct>=.5){title='Vas por buen camino';sub:'Revisa las teorías de la naturaleza jurídica y los medios de solución de conflictos.';stars='⭐'}
+  else{title='Sigue estudiando';sub='Vuelve a repasar el Tema 9 y dale otra vuelta al quiz.';stars='📚'}
+  document.getElementById('stars').textContent=stars;
+  document.getElementById('r-title').textContent=title;
+  document.getElementById('r-sub').textContent=sub;
+}
+
+function restart(){
+  cur=0;score=0;answered=false;
+  document.getElementById('r-screen').classList.remove('show');
+  document.getElementById('q-screen').style.display='block';
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
