@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — Acción, Pretensión y Presupuestos</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+  .card{background:#fff;border-radius:24px;padding:clamp(1.25rem,5vw,2rem);max-width:640px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+  .header{text-align:center;margin-bottom:1.5rem}
+  .badge{display:inline-block;background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff;font-size:11px;font-weight:600;letter-spacing:.05em;padding:5px 14px;border-radius:99px;text-transform:uppercase;margin-bottom:10px}
+  h1{font-size:clamp(17px,4vw,21px);font-weight:700;color:#1a1a2e;margin-bottom:4px}
+  .subtitle{font-size:13px;color:#888}
+  .progress-bar{background:#f0f0f0;border-radius:99px;height:8px;margin-bottom:1.5rem;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#f093fb,#f5576c);border-radius:99px;transition:width .4s ease}
+  .progress-label{display:flex;justify-content:space-between;font-size:12px;color:#aaa;margin-bottom:6px}
+  .q-num{font-size:11px;font-weight:700;color:#f5576c;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+  .q-text{font-size:clamp(14px,3.5vw,16px);font-weight:600;color:#1a1a2e;line-height:1.55;margin-bottom:14px}
+  .options{display:flex;flex-direction:column;gap:9px}
+  .option{border:2px solid #e8e8f0;border-radius:14px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,3vw,14px);color:#444;transition:all .2s;display:flex;align-items:flex-start;gap:10px;background:#fff;text-align:left}
+  .option:hover:not(.disabled){border-color:#f093fb;background:#fdf4ff;color:#9d174d}
+  .option.correct{border-color:#22c55e;background:#f0fdf4;color:#15803d}
+  .option.wrong{border-color:#ef4444;background:#fef2f2;color:#b91c1c}
+  .option.disabled{cursor:default}
+  .opt-icon{width:26px;height:26px;min-width:26px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px}
+  .option.correct .opt-icon::after{content:'✓'}
+  .option.wrong .opt-icon::after{content:'✕'}
+  .feedback{border-radius:12px;padding:11px 14px;font-size:clamp(12px,3vw,13px);margin-top:12px;display:none;line-height:1.6}
+  .feedback.show{display:block}
+  .feedback.ok{background:#f0fdf4;color:#15803d;border:1.5px solid #bbf7d0}
+  .feedback.fail{background:#fef2f2;color:#b91c1c;border:1.5px solid #fecaca}
+  .actions{display:flex;justify-content:center;margin-top:1.25rem}
+  .btn{padding:12px clamp(20px,5vw,32px);border-radius:99px;border:none;cursor:pointer;font-size:15px;font-weight:600;transition:all .2s;width:100%;max-width:260px}
+  .btn-primary{background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff}
+  .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+  .btn-primary:disabled{opacity:.4;cursor:default;transform:none}
+  .btn-ghost{background:#fdf4ff;color:#9d174d}
+  .btn-ghost:hover{background:#fce7f3}
+  .result-screen{text-align:center;display:none}
+  .result-screen.show{display:block}
+  .score-circle{width:110px;height:110px;border-radius:50%;background:linear-gradient(135deg,#f093fb,#f5576c);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 1.2rem;color:#fff}
+  .score-num{font-size:34px;font-weight:800;line-height:1}
+  .score-denom{font-size:13px;opacity:.8}
+  .result-title{font-size:clamp(18px,4vw,22px);font-weight:700;color:#1a1a2e;margin-bottom:6px}
+  .result-sub{font-size:13px;color:#888;margin-bottom:1.5rem;line-height:1.6;padding:0 .5rem}
+  .stars{font-size:26px;margin-bottom:12px;letter-spacing:4px}
+  @media(max-width:400px){body{padding:.5rem}.card{border-radius:18px}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <div class="badge">Derecho Procesal</div>
+    <h1>Acción, Pretensión, Excepción y Presupuestos</h1>
+    <p class="subtitle">Temas 10, 11 y 12 · 25 preguntas</p>
+  </div>
+  <div class="progress-label">
+    <span id="prog-text">Pregunta 1 de 25</span>
+    <span id="prog-pct">0%</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+
+  <div id="q-screen">
+    <div class="q-num" id="q-num">Pregunta 1</div>
+    <div class="q-text" id="q-text"></div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-next" disabled onclick="next()">Siguiente →</button>
+    </div>
+  </div>
+
+  <div class="result-screen" id="r-screen">
+    <div class="stars" id="stars"></div>
+    <div class="score-circle">
+      <div class="score-num" id="r-score">0</div>
+      <div class="score-denom">/25</div>
+    </div>
+    <div class="result-title" id="r-title"></div>
+    <div class="result-sub" id="r-sub"></div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="restart()">Reintentar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const Q=[
+  {q:"¿Cómo se define la acción en su sentido técnico-procesal más preciso?",opts:["Como sinónimo del derecho subjetivo material vulnerado","Como el poder o facultad de provocar la actividad jurisdiccional del Estado","Como sinónimo de la demanda presentada ante el tribunal","Como la pretensión que el actor formula ante el juez"],ans:1,fb:"En su sentido técnico-procesal auténtico —recogido por Eduardo Couture— la acción es el poder o facultad de provocar la actividad jurisdiccional del Estado. Es un derecho autónomo, distinto del derecho sustancial discutido."},
+  {q:"¿Cuál es el sujeto pasivo de la acción?",opts:["El demandado","El tribunal que conoce la causa","El Estado","El abogado defensor del demandado"],ans:2,fb:"En la acción, el sujeto pasivo es el Estado, porque la acción se dirige contra él a través de los tribunales de justicia para que ponga en movimiento su actividad jurisdiccional. El demandado es el sujeto pasivo de la pretensión, no de la acción."},
+  {q:"¿En qué se diferencia la acción de la pretensión?",opts:["La acción es el objeto del juicio; la pretensión es el medio para ejercerla","La acción es el poder de provocar la actividad jurisdiccional; la pretensión es lo que el demandante solicita que se resuelva a su favor","Son conceptos sinónimos que se usan indistintamente","La pretensión se dirige contra el Estado; la acción se dirige contra el demandado"],ans:1,fb:"La acción es el continente y la pretensión es el contenido. La acción es el poder de activar la jurisdicción; la pretensión es el objeto del juicio, lo que concretamente pide el actor. Ambas se materializan en la demanda."},
+  {q:"¿Es necesario tener efectivamente vulnerado un derecho subjetivo para poder ejercer la acción?",opts:["Sí, sin lesión real del derecho no hay acción posible","No, basta con pretender haber sufrido la lesión de un derecho subjetivo","Solo si se trata de acciones declarativas","Sí, pero únicamente en materia penal"],ans:1,fb:"Para accionar basta la afirmación —la creencia— de haber sufrido una lesión, aunque esta no se haya producido realmente. Si existió o no la lesión es una incógnita que dilucidará el juez en su sentencia."},
+  {q:"¿Cuál es la causa de la pretensión?",opts:["La finalidad o beneficio jurídico que el demandante busca obtener","El hecho o acto jurídico que sirve de fundamento a la pretensión","La existencia de un conflicto jurídico de intereses no resuelto","El tribunal ante el cual se deduce la acción"],ans:1,fb:"La causa de la pretensión es el hecho o acto jurídico que le sirve de fundamento, o como señala el art. 177 CPC, el fundamento inmediato del derecho deducido en juicio. Es el 'por qué se pide'."},
+  {q:"¿Qué es la demanda?",opts:["El poder o facultad de provocar la actividad jurisdiccional","El conflicto jurídico sometido al conocimiento del tribunal","El acto procesal mediante el cual el actor ejerce la acción sometiendo su pretensión al tribunal","La contestación del demandado a los cargos del actor"],ans:2,fb:"La demanda es el acto procesal en virtud del cual el actor ejercita la acción sometiendo al conocimiento del tribunal su pretensión para que se le reconozca algún derecho que le ha sido desconocido o menoscabado. Es la acción + pretensión materializadas."},
+  {q:"¿Cuáles son los requisitos especiales de la demanda según el art. 254 CPC?",opts:["Firma del abogado, individualización de las partes y peticiones concretas solamente","Designación del tribunal, individualización del demandante y demandado, exposición clara de los hechos y fundamentos de derecho, y peticiones concretas","Solo la individualización de las partes y el domicilio del demandado","Patrocinio, mandato judicial y suma del escrito"],ans:1,fb:"El art. 254 CPC exige: 1) designación del tribunal; 2) individualización del demandante (nombre, RUT, domicilio, profesión, correo), su representante y naturaleza de la representación; 3) individualización del demandado; 4) exposición clara de los hechos y fundamentos de derecho; y 5) peticiones concretas."},
+  {q:"¿En qué caso el juez puede no dar curso a la demanda de oficio?",opts:["Cuando falta el patrocinio del abogado","Cuando no se cumplen los tres primeros requisitos del art. 254 CPC (designación del tribunal, individualización del demandante e individualización del demandado)","Cuando las peticiones no son concretas","Cuando el demandante no acompaña documentos fundantes"],ans:1,fb:"El juez puede de oficio no dar curso a la demanda cuando faltan los tres primeros requisitos del art. 254 CPC: la designación del tribunal, la individualización del demandante y la individualización del demandado. Los requisitos 4° y 5° no habilitan esa medida de oficio."},
+  {q:"¿Qué es la jactancia y qué consecuencia produce?",opts:["El acto por el cual el demandante retira su demanda voluntariamente","La situación en que una persona manifiesta corresponderle un derecho del cual no está gozando, lo que habilita a la víctima a pedir que se le fije un plazo de 10 días para deducir su demanda","La excepción dilatoria que alega el demandado para corregir vicios del procedimiento","El acto del juez de declarar desierto el recurso de apelación"],ans:1,fb:"Hay jactancia cuando alguien manifiesta corresponderle un derecho del que no está gozando. La víctima puede demandar de jactancia y pedir que el tribunal le fije al jactancioso un plazo de 10 días para deducir su demanda, bajo apercibimiento de no ser oído después respecto de ese derecho."},
+  {q:"Al interponer una medida prejudicial precautoria, ¿qué carga procesal surge para el solicitante?",opts:["Debe presentar su demanda en el término de 10 días y solicitar que se mantengan las medidas, plazo ampliable hasta 30 días por motivos fundados","Debe designar abogado patrocinante dentro de 5 días hábiles","Debe consignar una garantía ante el tribunal dentro de 3 días","No surge ninguna carga adicional, la medida se mantiene indefinidamente"],ans:0,fb:"Quien obtiene una medida prejudicial precautoria tiene la carga de presentar su demanda en 10 días y pedir que se mantengan las medidas. El plazo puede ampliarse hasta 30 días por motivos fundados. Si no lo hace, queda responsable de los perjuicios y se considera doloso su procedimiento (Art. 280 CPC)."},
+  {q:"¿Cuándo pueden deducirse varias acciones incompatibles en una misma demanda?",opts:["Nunca, las acciones incompatibles siempre deben presentarse en escritos separados","Pueden deducirse siempre que estén sujetas al mismo procedimiento, para que sean resueltas una como subsidiaria de la otra","Solo si el tribunal lo autoriza expresamente","Solo en materia penal, no en civil"],ans:1,fb:"El art. 17 CPC permite deducir en una misma demanda acciones incompatibles, con la condición de que sean resueltas una como subsidiaria de la otra. El tribunal debe pronunciarse primero sobre las principales y solo si no las acepta, sobre las subsidiarias en el orden formulado."},
+  {q:"¿Qué es la reconvención y cuándo debe deducirse?",opts:["Es la réplica del demandante a la contestación; se deduce en el escrito de réplica","Es la contrademanda que deduce el demandado en el escrito de contestación de la demanda","Es la excepción dilatoria de litispendencia que opone el demandado","Es la solicitud del demandado para que se acumule otra causa pendiente"],ans:1,fb:"La reconvención es la contrademanda que deduce el demandado en el mismo escrito de contestación, sujetándose a los requisitos del art. 254 CPC. Se tramita y falla conjuntamente con la demanda principal (Art. 316 CPC)."},
+  {q:"¿Cuáles son los requisitos de procedencia de la reconvención?",opts:["Que el demandado tenga abogado distinto al del demandante, que el juicio esté en segunda instancia y que las acciones sean compatibles","Que el tribunal sea competente para conocerla, que la acción esté sometida al mismo procedimiento que la demanda principal, y que el proceso esté en primera instancia","Que exista conexión entre la demanda principal y la reconvención, y que ambas sean del mismo valor","Solo que el juicio esté en primera instancia y que el demandado lo solicite antes de contestar"],ans:1,fb:"La reconvención requiere: 1) que el tribunal sea competente respecto de la materia reconvencional; 2) que la acción reconvencional esté sometida al mismo procedimiento que la demanda principal; y 3) que el proceso se encuentre en primera instancia."},
+  {q:"¿Qué son las excepciones dilatorias y cuál es su efecto?",opts:["Son defensas que miran el fondo del pleito y tienden a extinguir la acción","Son medios de defensa que se refieren a la corrección del procedimiento sin afectar el fondo de la acción; paralizan la acción sin extinguirla","Son excepciones que pueden oponerse en cualquier estado del juicio","Son las que permiten al demandado oponer la prescripción o el pago de la deuda"],ans:1,fb:"Las excepciones dilatorias (Art. 303 CPC) se refieren a la corrección del procedimiento, sin tocar el fondo. Su efecto es paralizar la acción sin extinguirla: subsanan vicios o defectos del procedimiento. Deben oponerse antes de contestar la demanda, dentro del término para hacerlo."},
+  {q:"¿Cuáles son las excepciones dilatorias contempladas en el art. 303 CPC?",opts:["Prescripción, transacción, pago efectivo de la deuda y cosa juzgada","Incompetencia del tribunal, litispendencia, ineptitud del libelo, falta de capacidad del demandante o su representación, beneficio de excusión, y cualquiera otra que tenga por objeto la corrección del procedimiento","Solo la incompetencia del tribunal y la litispendencia","Falta de personería, ineptitud del libelo y defecto legal en el modo de proponer la demanda"],ans:1,fb:"El art. 303 CPC enumera: 1) incompetencia del tribunal; 2) litispendencia; 3) ineptitud del libelo; 4) falta de capacidad del demandante o de personería de su representante; 5) beneficio de excusión; y 6) cualquiera otra que tenga por objeto la corrección del procedimiento sin afectar el fondo."},
+  {q:"¿Qué son las excepciones perentorias y cuándo deben oponerse?",opts:["Se refieren a la corrección del procedimiento y deben oponerse antes de contestar la demanda","Miran el fondo del pleito y tienden a extinguir la acción; deben oponerse en el escrito de contestación","Son las mismas que las dilatorias pero se oponen en segunda instancia","Se deducen junto con la demanda reconvencional en cualquier estado del juicio"],ans:1,fb:"Las excepciones perentorias atacan el fondo de la pretensión y buscan extinguir la acción. No tienen enumeración taxativa: cualquier medio de defensa dirigido a destruir la pretensión del actor es una excepción perentoria. Deben oponerse en el escrito de contestación (Art. 309 N° 3 CPC)."},
+  {q:"¿Cuáles son las excepciones anómalas y qué las caracteriza?",opts:["Son excepciones dilatorias que se oponen de manera anticipada antes del emplazamiento","Son ciertas excepciones perentorias que pueden intentarse en un momento procesal distinto a la contestación: prescripción, transacción, pago efectivo de la deuda y cosa juzgada","Son las excepciones que solo puede oponer el demandante","Son excepciones que el juez puede declarar de oficio en cualquier estado del juicio"],ans:1,fb:"Las excepciones anómalas (Art. 310 CPC) son excepciones perentorias especiales que, por excepción a la regla general, pueden oponerse en un momento procesal distinto a la contestación. Son cuatro: prescripción, transacción, pago efectivo de la deuda y cosa juzgada."},
+  {q:"¿Cómo distingue la doctrina entre excepción y defensa?",opts:["La excepción niega la existencia del derecho reclamado; la defensa supone que existió pero que ha caducado","La defensa niega la existencia del derecho reclamado; la excepción supone que el derecho existió y solo establece que ha caducado o que se refiere a corrección del procedimiento","Son conceptos idénticos tanto en doctrina como en el CPC","La excepción la deduce el demandante; la defensa la deduce el demandado"],ans:1,fb:"Para la doctrina: la defensa desconoce la existencia misma del derecho (niega el derecho a reclamo); la excepción supone que el derecho existió pero alega que ha caducado por un hecho independiente o que se refiere a la corrección del procedimiento. Esta distinción importa porque el tribunal solo estaría obligado a pronunciarse sobre las excepciones, no sobre las meras defensas."},
+  {q:"¿Cuál es la postura del Código de Procedimiento Civil respecto de la distinción entre excepción y defensa?",opts:["El CPC acepta plenamente la distinción doctrinal y regula cada figura por separado","El CPC no acepta la distinción: trata excepción y defensa como conceptos sinónimos","El CPC solo reconoce las excepciones dilatorias como verdaderas excepciones","El CPC exige que se indique expresamente si se trata de una excepción o una defensa"],ans:1,fb:"El Código de Procedimiento Civil no acepta la distinción doctrinaria entre excepción y defensa: para él son conceptos sinónimos. La distinción es relevante desde la perspectiva doctrinal y jurisprudencial, pero no tiene consagración expresa en el CPC."},
+  {q:"¿Cuáles son los presupuestos procesales de existencia del proceso?",opts:["Tribunal competente, capacidad de las partes y cumplimiento de formalidades legales","Órgano jurisdiccional legalmente habilitado, conflicto jurídico de relevancia y existencia física o legal de las partes","Emplazamiento válido, patrocinio y mandato judicial, y conflicto de intereses","Demanda, contestación y sentencia definitiva ejecutoriada"],ans:1,fb:"Los presupuestos de existencia son: 1) un órgano jurisdiccional legalmente habilitado e instalado; 2) un conflicto jurídico de relevancia (pretensiones del demandante + excepciones del demandado); y 3) existencia física o legal de las partes. La ausencia de cualquiera de ellos acarrea la inexistencia del proceso."},
+  {q:"¿Cuáles son los presupuestos procesales de validez del proceso?",opts:["Órgano jurisdiccional, partes y conflicto jurídico","Tribunal competente, capacidad de las partes para comparecer en juicio, y cumplimiento de las formalidades legales","Emplazamiento, patrocinio y mandato judicial, y domicilio conocido de las partes","Demanda fundada, prueba rendida y sentencia motivada"],ans:1,fb:"Los presupuestos de validez son: 1) tribunal competente según las normas de competencia; 2) capacidad de las partes para comparecer en juicio; y 3) cumplimiento de las formalidades legales según la naturaleza del asunto (incluyendo el emplazamiento como trámite esencial, art. 795 y 800 CPC)."},
+  {q:"¿Cómo se alega la inexistencia del proceso según la jurisprudencia?",opts:["Mediante recurso de casación en la forma ante la Corte de Apelaciones","A través de excepción perentoria, que ataca el fondo de la acción deducida","Mediante incidente de nulidad de actuaciones procesales","Interponiendo recurso de queja ante la Corte Suprema"],ans:1,fb:"La ley no contempla una forma específica de reclamar la inexistencia del proceso. La jurisprudencia ha señalado que debe hacerse mediante excepción perentoria, que ataca el fondo de la acción deducida, y debe ejercerse cuando quien ganó un proceso inexistente pretende obtener el cumplimiento de lo resuelto."},
+  {q:"¿Qué acción clasificatoria corresponde a la que busca obtener el cumplimiento forzado de una obligación que consta en un título ejecutivo?",opts:["Acción declarativa","Acción constitutiva","Acción ejecutiva","Acción cautelar o precautoria"],ans:2,fb:"Las acciones ejecutivas tienden a obtener el cumplimiento forzado de una obligación que consta en un título ejecutivo o que lleva aparejada ejecución. Se tramitan mediante procedimiento ejecutivo de apremio con medidas compulsivas."},
+  {q:"¿Qué tipo de acción persigue constituir estados jurídicos nuevos modificando uno existente?",opts:["Acción de condena","Acción declarativa","Acción constitutiva","Acción ejecutiva"],ans:2,fb:"Las acciones constitutivas persiguen que, mediante una sentencia, se constituyan estados jurídicos nuevos modificando un estado jurídico existente. El ejemplo clásico es la acción de divorcio, que crea un nuevo estado civil."},
+  {q:"¿Cuál es la diferencia entre una acción real y una acción personal?",opts:["La acción real se ejerce contra cualquier persona; la personal solo contra el demandado inicial","La acción real sirve de garantía a los derechos reales; la acción personal sirve de garantía a un derecho personal","Las acciones reales se tramitan en juicio ordinario; las personales en juicio ejecutivo","Las acciones reales son siempre de mayor cuantía; las personales pueden ser de mínima cuantía"],ans:1,fb:"Las acciones reales son las que sirven de garantía a los derechos reales —del derecho real nace la acción real—. Las acciones personales son las que sirven de garantía a un derecho personal u obligación. Esta clasificación importa para determinar la competencia y para la excepción de cosa juzgada."}
+];
+
+const labels=['A','B','C','D'];
+let cur=0,score=0,answered=false;
+
+function render(){
+  const q=Q[cur];
+  const pct=Math.round(cur/Q.length*100);
+  document.getElementById('q-num').textContent='Pregunta '+(cur+1);
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-text').textContent='Pregunta '+(cur+1)+' de '+Q.length;
+  document.getElementById('prog-pct').textContent=pct+'%';
+  const fb=document.getElementById('feedback');
+  fb.className='feedback';fb.textContent='';
+  document.getElementById('btn-next').disabled=true;
+  answered=false;
+  const opts=document.getElementById('options');
+  opts.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const d=document.createElement('div');
+    d.className='option';
+    d.innerHTML='<div class="opt-icon">'+labels[i]+'</div><span>'+o+'</span>';
+    d.onclick=()=>pick(i,d);
+    opts.appendChild(d);
+  });
+}
+
+function pick(i,el){
+  if(answered)return;
+  answered=true;
+  const q=Q[cur];
+  document.querySelectorAll('.option').forEach(o=>o.classList.add('disabled'));
+  if(i===q.ans){el.classList.add('correct');score++;showFb(true,q.fb);}
+  else{el.classList.add('wrong');document.querySelectorAll('.option')[q.ans].classList.add('correct');showFb(false,q.fb);}
+  document.getElementById('btn-next').disabled=false;
+}
+
+function showFb(ok,text){
+  const fb=document.getElementById('feedback');
+  fb.className='feedback show '+(ok?'ok':'fail');
+  fb.textContent=(ok?'✓ Correcto — ':'✗ Incorrecto — ')+text;
+}
+
+function next(){
+  cur++;
+  if(cur>=Q.length){showResult();return;}
+  render();
+}
+
+function showResult(){
+  document.getElementById('q-screen').style.display='none';
+  document.getElementById('r-screen').classList.add('show');
+  document.getElementById('r-score').textContent=score;
+  document.getElementById('prog-fill').style.width='100%';
+  document.getElementById('prog-text').textContent='Completado';
+  document.getElementById('prog-pct').textContent='100%';
+  const pct=score/Q.length;
+  let title,sub,stars;
+  if(pct===1){title='¡Perfecto!';sub='Dominaste acción, pretensión, excepción y presupuestos. ¡Excelente!';stars='⭐⭐⭐'}
+  else if(pct>=.75){title='¡Muy bien!';sub='Sólido manejo de los temas. Unos pocos conceptos más y lo tienes dominado.';stars='⭐⭐'}
+  else if(pct>=.5){title='Vas por buen camino';sub='Repasa las preguntas que fallaste y vuelve a intentarlo.';stars='⭐'}
+  else{title='Sigue estudiando';sub='Revisa los temas 10, 11 y 12 y da otra oportunidad al quiz.';stars='📚'}
+  document.getElementById('stars').textContent=stars;
+  document.getElementById('r-title').textContent=title;
+  document.getElementById('r-sub').textContent=sub;
+}
+
+function restart(){
+  cur=0;score=0;answered=false;
+  document.getElementById('r-screen').classList.remove('show');
+  document.getElementById('q-screen').style.display='block';
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
