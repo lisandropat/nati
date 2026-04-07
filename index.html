@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quizzes — Derecho Procesal</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      color: #fff;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.35);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 99px;
+      margin-bottom: 14px;
+    }
+
+    header h1 {
+      font-size: clamp(26px, 5vw, 38px);
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 10px;
+      line-height: 1.2;
+    }
+
+    header p {
+      font-size: 15px;
+      color: rgba(255,255,255,0.8);
+      max-width: 420px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 1.5rem;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: transform .2s, box-shadow .2s;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.18);
+    }
+
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .icon-purple { background: #ede9fe; }
+    .icon-blue   { background: #dbeafe; }
+    .icon-green  { background: #dcfce7; }
+
+    .card-body { flex: 1; }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid #f0f0f5;
+      padding-top: 12px;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 99px;
+    }
+
+    .tag-purple { background: #ede9fe; color: #5b21b6; }
+    .tag-blue   { background: #dbeafe; color: #1d4ed8; }
+    .tag-green  { background: #dcfce7; color: #15803d; }
+
+    .pill-count {
+      font-size: 12px;
+      font-weight: 700;
+      color: #aaa;
+      white-space: nowrap;
+    }
+
+    .arrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #7c3aed;
+      margin-top: 2px;
+    }
+
+    .arrow svg {
+      width: 16px;
+      height: 16px;
+      transition: transform .2s;
+    }
+
+    .card:hover .arrow svg {
+      transform: translateX(3px);
+    }
+
+    footer {
+      margin-top: 2.5rem;
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="eyebrow">Material de estudio</div>
+    <h1>Quizzes de Derecho Procesal</h1>
+    <p>Pon a prueba tus conocimientos con preguntas de selección múltiple, retroalimentación inmediata y puntaje al final.</p>
+  </header>
+
+  <div class="grid">
+
+    <a class="card" href="derecho-procesal.html">
+      <div class="card-icon icon-purple">⚖️</div>
+      <div class="card-body">
+        <div class="card-title">Procedimiento, Órganos y Competencia</div>
+        <div class="card-desc">
+          Principios del procedimiento, plazos, notificaciones, resoluciones judiciales, representación procesal, órganos jurisdiccionales ordinarios y arbitrales, y reglas de competencia absoluta y relativa.
+        </div>
+      </div>
+      <div class="card-meta">
+        <div class="tags">
+          <span class="tag tag-purple">Procedimiento</span>
+          <span class="tag tag-blue">Competencia</span>
+          <span class="tag tag-green">Órganos</span>
+        </div>
+        <span class="pill-count">30 preguntas</span>
+      </div>
+      <span class="arrow">
+        Comenzar quiz
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 8h10M9 4l4 4-4 4"/>
+        </svg>
+      </span>
+    </a>
+
+  </div>
+
+  <footer>Más quizzes próximamente · Material de estudio personal</footer>
+
+</body>
+</html>
