@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — Juicio Ordinario de Mayor Cuantía</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:linear-gradient(135deg,#0f2027 0%,#203a43 50%,#2c5364 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+  .card{background:#fff;border-radius:24px;padding:clamp(1.25rem,5vw,2rem);max-width:660px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.35)}
+  .header{text-align:center;margin-bottom:1.5rem}
+  .badge{display:inline-block;background:linear-gradient(135deg,#203a43,#2c5364);color:#fff;font-size:11px;font-weight:600;letter-spacing:.05em;padding:5px 14px;border-radius:99px;text-transform:uppercase;margin-bottom:10px}
+  h1{font-size:clamp(17px,4vw,21px);font-weight:700;color:#1a1a2e;margin-bottom:4px}
+  .subtitle{font-size:13px;color:#888}
+  .progress-bar{background:#f0f0f0;border-radius:99px;height:8px;margin-bottom:1.5rem;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#203a43,#2c5364);border-radius:99px;transition:width .4s ease}
+  .progress-label{display:flex;justify-content:space-between;font-size:12px;color:#aaa;margin-bottom:6px}
+  .q-num{font-size:11px;font-weight:700;color:#2c5364;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+  .q-text{font-size:clamp(14px,3.5vw,16px);font-weight:600;color:#1a1a2e;line-height:1.55;margin-bottom:14px}
+  .options{display:flex;flex-direction:column;gap:9px}
+  .option{border:2px solid #e8e8f0;border-radius:14px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,3vw,14px);color:#444;transition:all .2s;display:flex;align-items:flex-start;gap:10px;background:#fff;text-align:left}
+  .option:hover:not(.disabled){border-color:#2c5364;background:#eef4f7;color:#0f2027}
+  .option.correct{border-color:#22c55e;background:#f0fdf4;color:#15803d}
+  .option.wrong{border-color:#ef4444;background:#fef2f2;color:#b91c1c}
+  .option.disabled{cursor:default}
+  .opt-icon{width:26px;height:26px;min-width:26px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px}
+  .option.correct .opt-icon::after{content:'✓'}
+  .option.wrong .opt-icon::after{content:'✕'}
+  .feedback{border-radius:12px;padding:11px 14px;font-size:clamp(12px,3vw,13px);margin-top:12px;display:none;line-height:1.6}
+  .feedback.show{display:block}
+  .feedback.ok{background:#f0fdf4;color:#15803d;border:1.5px solid #bbf7d0}
+  .feedback.fail{background:#fef2f2;color:#b91c1c;border:1.5px solid #fecaca}
+  .actions{display:flex;justify-content:center;margin-top:1.25rem}
+  .btn{padding:12px clamp(20px,5vw,32px);border-radius:99px;border:none;cursor:pointer;font-size:15px;font-weight:600;transition:all .2s;width:100%;max-width:260px}
+  .btn-primary{background:linear-gradient(135deg,#203a43,#2c5364);color:#fff}
+  .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+  .btn-primary:disabled{opacity:.4;cursor:default;transform:none}
+  .btn-ghost{background:#eef4f7;color:#0f2027}
+  .btn-ghost:hover{background:#d4e6ed}
+  .result-screen{text-align:center;display:none}
+  .result-screen.show{display:block}
+  .score-circle{width:110px;height:110px;border-radius:50%;background:linear-gradient(135deg,#203a43,#2c5364);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 1.2rem;color:#fff}
+  .score-num{font-size:34px;font-weight:800;line-height:1}
+  .score-denom{font-size:13px;opacity:.8}
+  .result-title{font-size:clamp(18px,4vw,22px);font-weight:700;color:#1a1a2e;margin-bottom:6px}
+  .result-sub{font-size:13px;color:#888;margin-bottom:1.5rem;line-height:1.6;padding:0 .5rem}
+  .stars{font-size:26px;margin-bottom:12px;letter-spacing:4px}
+  @media(max-width:400px){body{padding:.5rem}.card{border-radius:18px}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <div class="badge">Derecho Procesal Civil</div>
+    <h1>Juicio Ordinario de Mayor Cuantía</h1>
+    <p class="subtitle">Fase de Discusión · Prueba · Sentencia · 30 preguntas</p>
+  </div>
+  <div class="progress-label">
+    <span id="prog-text">Pregunta 1 de 30</span>
+    <span id="prog-pct">0%</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+
+  <div id="q-screen">
+    <div class="q-num" id="q-num">Pregunta 1</div>
+    <div class="q-text" id="q-text"></div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-next" disabled onclick="next()">Siguiente →</button>
+    </div>
+  </div>
+
+  <div class="result-screen" id="r-screen">
+    <div class="stars" id="stars"></div>
+    <div class="score-circle">
+      <div class="score-num" id="r-score">0</div>
+      <div class="score-denom">/30</div>
+    </div>
+    <div class="result-title" id="r-title"></div>
+    <div class="result-sub" id="r-sub"></div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="restart()">Reintentar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const Q=[
+  {
+    q:"¿A qué litigios se aplica el juicio ordinario de mayor cuantía como procedimiento supletorio?",
+    opts:["Solo a litigios de cuantía superior a 500 UTM cuando la ley no establezca procedimiento especial","A litigios de cuantía superior a 500 UTM exclusivamente, sin excepciones","A todos los litigios civiles independientemente de la cuantía","A litigios de cuantía entre 10 y 500 UTM"],
+    ans:0,
+    fb:"El juicio ordinario de mayor cuantía se aplica a litigios cuya cuantía sea superior a 500 UTM y siempre que la ley no establezca un procedimiento especial. Su carácter supletorio lo hace fundamental en el sistema procesal civil."
+  },
+  {
+    q:"¿Cuál de los siguientes casos NO obliga al actor a presentar una demanda?",
+    opts:["Medidas prejudiciales precautorias (art. 280)","Jactancia (art. 269)","Reserva de acciones en el juicio ejecutivo (art. 474)","Interposición de un recurso de apelación"],
+    ans:3,
+    fb:"Los casos en que demandar es obligatorio son: pluralidad de acciones (art. 21), medidas prejudiciales precautorias (art. 280), jactancia (art. 269), reserva de acciones y excepciones en el juicio ejecutivo (art. 474) y cuestiones prejudiciales civiles (art. 252). La apelación no es un caso de demanda obligatoria."
+  },
+  {
+    q:"¿Cuál es el efecto de la demanda respecto a la competencia del tribunal?",
+    opts:["Fija la competencia solo respecto del demandado","El actor prorroga tácitamente la competencia y queda fijada la competencia del juez con relación a él","La competencia queda suspendida hasta que se notifique al demandado","No produce ningún efecto sobre la competencia hasta la contestación"],
+    ans:1,
+    fb:"Uno de los efectos de la demanda es que se entiende que el actor prorroga tácitamente la competencia (en los casos en que esta proceda) y queda fijada la competencia del juez con relación al actor desde el momento de su presentación."
+  },
+  {
+    q:"¿Qué ocurre si el actor retira la demanda antes de ser notificada al demandado?",
+    opts:["Debe tramitarse como desistimiento y el tribunal debe pronunciarse","Puede retirarla sin trámite alguno y se considerará como no presentada","Solo puede retirarla si el tribunal lo autoriza expresamente","Puede retirarla, pero queda impedido de presentar la misma demanda nuevamente"],
+    ans:1,
+    fb:"Antes de notificada la demanda al demandado, el actor puede retirarla (modificarla, ampliarla o restringirla) sin trámite alguno y se considerará como no presentada. Es la situación que otorga mayor libertad al demandante."
+  },
+  {
+    q:"¿Hasta qué momento puede el demandante ampliar o rectificar su demanda ya notificada pero aún no contestada?",
+    opts:["Hasta el vencimiento del término probatorio","Hasta la citación a oír sentencia","Puede hacerlo después de notificada y antes de la contestación; se considera demanda nueva para efectos de notificación","Solo si el demandado lo acepta expresamente en la contestación"],
+    ans:2,
+    fb:"Notificada la demanda a cualquiera de los demandados y antes de la contestación, el demandante puede hacer las ampliaciones o rectificaciones que estime convenientes. Estas modificaciones se considerarán como una demanda nueva para los efectos de su notificación al demandado."
+  },
+  {
+    q:"¿Cuál es el requisito especial de la demanda cuya omisión NO faculta al juez para no darle curso de oficio?",
+    opts:["La designación del tribunal","La individualización del demandante","La exposición clara de los hechos y fundamentos de derecho","La individualización del demandado"],
+    ans:2,
+    fb:"El juez solo puede no dar curso de oficio a la demanda cuando faltan los tres primeros requisitos del art. 254 CPC: designación del tribunal, individualización del demandante y del demandado. Los requisitos 4° (exposición de hechos y fundamentos) y 5° (peticiones concretas) solo pueden alegarse por el demandado vía excepción dilatoria de ineptitud del libelo."
+  },
+  {
+    q:"¿Qué tipo de resolución provee la demanda y cómo se denomina?",
+    opts:["Una sentencia interlocutoria llamada 'autos'","Un decreto (resolución de mero trámite) que da curso progresivo a los autos, a través del 'traslado'","Una sentencia definitiva que abre el juicio","Un auto acordado que fija el calendario del proceso"],
+    ans:1,
+    fb:"La demanda se provee con una resolución de mero trámite llamada decreto, cuyo objeto es dar curso progresivo a los autos. Esta primera resolución del tribunal se llama 'traslado' y da inicio formal al proceso."
+  },
+  {
+    q:"¿Cuáles son los dos elementos que componen el emplazamiento?",
+    opts:["La presentación de la demanda y el pago de la tasa judicial","La notificación hecha en forma legal y el transcurso del tiempo que la ley señala al demandado para comparecer","La notificación al demandado y la contestación de la demanda","La firma del mandato judicial y la designación de abogado patrocinante"],
+    ans:1,
+    fb:"El emplazamiento consta de dos elementos: (1) la notificación hecha en forma legal —que generalmente es personal por ser la primera gestión del juicio— y (2) el transcurso del tiempo que la ley señala al demandado para que comparezca al tribunal."
+  },
+  {
+    q:"¿Cuál es el término de emplazamiento ordinario cuando el demandado es notificado dentro del territorio jurisdiccional del tribunal?",
+    opts:["10 días hábiles","15 días corridos","18 días","30 días"],
+    ans:2,
+    fb:"El término de emplazamiento ordinario es de 18 días. Si el demandado es notificado fuera del territorio jurisdiccional pero dentro del país, o fuera del territorio de la República, a esos 18 días se agregan los días que indique la tabla de emplazamiento según el lugar."
+  },
+  {
+    q:"¿Cómo corre el término de emplazamiento cuando hay pluralidad de demandados?",
+    opts:["Cada demandado tiene su propio plazo individual desde su notificación","El término corre para todos a la vez y se cuenta hasta que expire el último término parcial que corresponda a los notificados","El plazo comienza solo cuando el último demandado es notificado","Solo el primer demandado notificado fija el plazo para todos"],
+    ans:1,
+    fb:"Tratándose de pluralidad de demandados, el término para contestar la demanda correrá para todos a la vez y se contará hasta que expire el último término parcial que corresponda a los notificados. Esto garantiza que todos tengan igual oportunidad de defensa."
+  },
+  {
+    q:"Las excepciones dilatorias deben oponerse todas en un mismo escrito. ¿Dentro de qué plazo y en qué momento procesal?",
+    opts:["Dentro del término probatorio, antes de la citación a oír sentencia","Dentro del término de emplazamiento y antes de contestar la demanda","Pueden oponerse en cualquier estado del juicio","En el mismo escrito de contestación de la demanda"],
+    ans:1,
+    fb:"Las excepciones dilatorias deben oponerse todas en un mismo escrito (art. 305 CPC), dentro del término de emplazamiento y antes de contestar la demanda. Si no se hace así, solo podrán alegarse en el progreso del juicio por vía de alegación o defensa."
+  },
+  {
+    q:"Opuestas las excepciones dilatorias, ¿cuál es el plazo que se confiere al demandante para responder?",
+    opts:["6 días","10 días","3 días, y vencido el plazo el tribunal resuelve","5 días hábiles"],
+    ans:2,
+    fb:"Opuestas las excepciones dilatorias, se confiere traslado al demandante por 3 días. Vencido ese plazo, haya o no evacuado el trámite, el tribunal resolverá la cuestión si no hay necesidad de prueba. Si la hay, se abre un término probatorio de 8 días."
+  },
+  {
+    q:"Si el tribunal acoge una excepción dilatoria (distinta de la incompetencia) y el demandante subsana el defecto, ¿cuántos días tiene el demandado para contestar la demanda?",
+    opts:["5 días","10 días","15 días","El término de emplazamiento original completo"],
+    ans:1,
+    fb:"Si las excepciones dilatorias son desechadas por improcedentes, o son subsanadas por el demandante una vez que el tribunal las acogió, el demandado tendrá 10 días para contestar la demanda (art. 308 CPC)."
+  },
+  {
+    q:"¿Cuáles son las dos excepciones perentorias que pueden oponerse como dilatorias según el CPC?",
+    opts:["Prescripción y pago efectivo de la deuda","Cosa juzgada y transacción","Litispendencia y cosa juzgada","Transacción y prescripción"],
+    ans:1,
+    fb:"Hay dos excepciones perentorias que pueden oponerse como dilatorias: la cosa juzgada y la transacción, pudiendo también oponerse en el escrito de contestación. Ambas pueden además plantearse en segunda instancia en forma de incidente."
+  },
+  {
+    q:"¿Cuáles son los requisitos especiales de la contestación de la demanda según el art. 309 CPC?",
+    opts:["Designación del tribunal, nombre y domicilio del demandado, excepciones y su fundamento, y peticiones concretas","Solo la individualización del demandado y las excepciones que opone","Patrocinio, mandato, individualización de las partes y peticiones concretas","Hechos y derecho en que se funda, peticiones y firma del abogado defensor"],
+    ans:0,
+    fb:"El art. 309 CPC exige: 1) designación del tribunal; 2) nombre, domicilio y profesión u oficio del demandado; 3) las excepciones que se oponen a la demanda y la exposición clara de los hechos y fundamentos de derecho; y 4) la enunciación precisa y clara de las peticiones que se someten al fallo del tribunal."
+  },
+  {
+    q:"Según la doctrina, ¿qué diferencia existe entre 'defensa' y 'excepción' en cuanto a la carga de la prueba?",
+    opts:["Si el demandado invoca una defensa debe probarla; si invoca una excepción, la prueba corresponde al actor","Si el demandado invoca una defensa nada tiene que probar; si invoca una excepción, el peso de la prueba recae en él","Tanto en la defensa como en la excepción, la carga de la prueba siempre recae sobre el actor","La carga de la prueba es idéntica en ambos casos según el CPC"],
+    ans:1,
+    fb:"Doctrinariamente: la defensa niega la existencia misma del derecho reclamado, por lo que si el demandado invoca una defensa nada tiene que probar. La excepción, en cambio, supone que el derecho existió pero ha caducado por un hecho independiente; si la invoca, el peso de la prueba recae en el demandado."
+  },
+  {
+    q:"¿Cuáles son las cuatro excepciones anómalas del art. 310 CPC que pueden oponerse en cualquier estado de la causa?",
+    opts:["Incompetencia, litispendencia, ineptitud del libelo y falta de capacidad","Prescripción, cosa juzgada, transacción y pago efectivo de la deuda cuando consta en antecedente escrito","Nulidad, rescisión, resolución y resciliación del contrato","Cosa juzgada, transacción, compensación y novación"],
+    ans:1,
+    fb:"Las excepciones anómalas (art. 310 CPC) son: prescripción, cosa juzgada, transacción y pago efectivo de la deuda cuando esta se funda en un antecedente escrito. Pueden oponerse en cualquier estado de la causa, siempre que se aleguen por escrito antes de la citación a sentencia en primera instancia o antes de la vista de la causa en segunda."
+  },
+  {
+    q:"¿Qué es el allanamiento a la demanda y qué efecto procesal produce inmediatamente?",
+    opts:["Es la total negación de los hechos por el demandado; produce la apertura del término probatorio","Es el acto por el cual el demandado admite la legitimidad de las pretensiones del actor; el tribunal cita a las partes para oír sentencia definitiva","Es la reconvención del demandado; produce la apertura de un cuaderno separado","Es la confesión extrajudicial del demandado; tiene valor de presunción judicial"],
+    ans:1,
+    fb:"El allanamiento es el acto por el cual el demandado admite la legitimidad de las pretensiones del actor. Producido el allanamiento, el tribunal mandará a citar a las partes para oír sentencia definitiva una vez evacuado el traslado de la réplica. El apoderado requiere poder especial para allanarse."
+  },
+  {
+    q:"¿Qué limitación tiene el actor al modificar sus acciones en el escrito de réplica?",
+    opts:["No puede agregar ningún nuevo argumento jurídico","Puede ampliar, adicionar o modificar las acciones formuladas en la demanda, pero sin alterar las que sean el objeto principal del pleito","Puede cambiar completamente el objeto del juicio si lo justifica con nuevos hechos","Solo puede reducir sus pretensiones, no ampliarlas"],
+    ans:1,
+    fb:"En el escrito de réplica, el actor puede ampliar, adicionar o modificar las acciones que haya formulado en la demanda, pero sin que pueda alterar las que sean objeto principal del pleito. Sin perjuicio de ello, puede modificarse la calificación jurídica del hecho, pero no el fundamento de la acción. El plazo para replicar es de 6 días fatales."
+  },
+  {
+    q:"¿Cuándo es obligatorio el llamado a conciliación y cuándo no procede?",
+    opts:["Es obligatorio en todo juicio civil; nunca hay excepciones","Es obligatorio en todo juicio civil en que sea legalmente admisible la transacción y no concurran causales de citación a sentencia; no procede en el juicio ejecutivo de obligaciones de dar ni de hacer y no hacer, entre otros","Solo es obligatorio cuando ambas partes lo solicitan","Solo procede en asuntos de familia, no en juicios patrimoniales ordinarios"],
+    ans:1,
+    fb:"La conciliación es obligatoria en todo juicio civil donde sea legalmente admisible la transacción, salvo que deban citarse las partes a oír sentencia sin más trámite. No procede en: juicio ejecutivo en obligaciones de dar, juicio ejecutivo en obligaciones de hacer y no hacer, derecho legal de retención, citación de evicción y juicios de hacienda."
+  },
+  {
+    q:"¿Qué tipo de resolución es la que recibe la causa a prueba y cómo se notifica?",
+    opts:["Un decreto que se notifica por estado diario","Una sentencia interlocutoria de segundo grado que se notifica por cédula","Un auto que se notifica personalmente a ambas partes","Una sentencia definitiva parcial que se notifica por carta certificada"],
+    ans:1,
+    fb:"La resolución que recibe la causa a prueba es una sentencia interlocutoria de segundo grado, que resuelve sobre un trámite que sirve de base para el pronunciamiento de la sentencia definitiva. Se notifica por cédula. Es un trámite esencial del juicio y determina los hechos sobre los cuales se rinde prueba."
+  },
+  {
+    q:"¿Con qué recurso se impugna la resolución que recibe la causa a prueba y cuál se interpone en subsidio?",
+    opts:["Apelación principal y casación en subsidio","Reposición dentro de tercero día, con apelación en subsidio","Casación en la forma, con apelación en subsidio","Solo recurso de queja ante la Corte de Apelaciones"],
+    ans:1,
+    fb:"La resolución que recibe la causa a prueba se impugna con un recurso de reposición, que debe interponerse dentro del tercer día, con una apelación en subsidio. La apelación se concede en el solo efecto devolutivo. El término probatorio ordinario comienza a correr desde la notificación de la resolución que resuelve la reposición."
+  },
+  {
+    q:"¿Cuántos días dura el término probatorio ordinario y qué característica especial tiene respecto a las partes?",
+    opts:["15 días; corre independientemente para cada parte desde su respectiva notificación","20 días; es un término común que corre para todas las partes desde un mismo momento y es fatal","30 días; puede ser prorrogado por el juez hasta 60 días","25 días hábiles; se suspende automáticamente durante los feriados legales"],
+    ans:1,
+    fb:"El término probatorio ordinario dura 20 días (salvo que las partes convengan en reducirlo). Es un término común —corre para todas las partes desde un mismo momento— y es fatal. Durante este período se puede rendir prueba en cualquier parte de la República y fuera de ella."
+  },
+  {
+    q:"¿Qué diferencia existe entre el término probatorio extraordinario para rendir prueba dentro y fuera del territorio de la República?",
+    opts:["Dentro del país se concede con audiencia y exige caución; fuera del país se concede con citación sin caución","Dentro del país se concede con citación sin exigir caución; fuera del país se concede con audiencia y exige depositar caución en arcas fiscales","Ambos se conceden con citación pero solo el extranjero exige caución","Son idénticos en tramitación; solo difiere el plazo según la tabla de emplazamiento"],
+    ans:1,
+    fb:"Para rendir prueba fuera del territorio jurisdiccional pero dentro de la República, el término extraordinario se concede con citación sin exigir caución. Para rendir prueba fuera del territorio de la República, se concede con audiencia (genera incidente) y el tribunal exigirá una caución depositada en arcas fiscales para dar curso a la solicitud."
+  },
+  {
+    q:"En materia de carga de la prueba (onus probandi), ¿qué regla se aplica cuando el demandado alega que una obligación se ha extinguido?",
+    opts:["Siempre corresponde al actor probar la extinción ya que él inició el juicio","Le corresponde al demandado probar el modo de extinción de la obligación","La carga se distribuye igualitariamente entre las partes","El juez puede libremente asignar la carga sin regla legal aplicable"],
+    ans:1,
+    fb:"Si al probar la existencia de una obligación el demandado expresa que ella se ha extinguido por alguno de los medios legales, le corresponde a él probar ese modo de extinción. Esto es consecuente con el criterio del art. 1698 CC: quien alega la extinción debe probarla."
+  },
+  {
+    q:"¿Cuál es el valor probatorio de un instrumento público entre las partes respecto de las declaraciones enunciativas que no tienen relación directa con lo dispositivo del acto?",
+    opts:["Hacen plena fe entre las partes en todo caso","Por regla general no hacen plena fe, salvo que tengan relación directa con lo dispositivo del acto, en cuyo caso sí la hacen","No tienen ningún valor probatorio y deben ser corroboradas por otros medios","Tienen valor de presunción simplemente legal"],
+    ans:1,
+    fb:"Las declaraciones enunciativas de un instrumento público (aquellas referidas a hechos) por regla general no hacen plena fe entre las partes. Sin embargo, si tienen relación directa con lo dispositivo del acto, también hacen plena fe entre las partes. Frente a terceros, estas declaraciones pueden ser invocadas por ellos como confesión extrajudicial."
+  },
+  {
+    q:"¿Cuándo se produce el reconocimiento tácito de un instrumento privado que emana de la contraparte?",
+    opts:["Cuando la contraparte guarda silencio durante 10 días desde la notificación","Cuando puesto en conocimiento de la parte que aparece haberlo otorgado, esta no lo objeta por falsedad o falta de integridad dentro del sexto día","Cuando transcurre el término probatorio sin que se haya objetado","Cuando la contraparte no comparece a la audiencia de conciliación"],
+    ans:1,
+    fb:"El reconocimiento tácito de un instrumento privado que emana de la contraparte se produce cuando, puesto en conocimiento de dicha parte, esta no lo objeta por falsedad o falta de integridad dentro de los 6 días siguientes a su presentación. El tribunal debe apercibir a esa parte con el reconocimiento tácito para que el plazo corra (art. 346 N°3 CPC)."
+  },
+  {
+    q:"¿Cuántos testigos pueden declarar como máximo por cada parte sobre cada punto de prueba?",
+    opts:["Hasta 4 testigos","Hasta 6 testigos","Hasta 8 testigos","No hay límite legal de testigos"],
+    ans:1,
+    fb:"Pueden declarar hasta 6 testigos por cada parte y sobre cada uno de los hechos que deban acreditarse, es decir, por cada punto de prueba. Solo se examinan los que figuren en la lista de testigos, aunque excepcionalmente pueden añadirse otros bajo juramento de que no se tuvo conocimiento de ellos al formarla."
+  },
+  {
+    q:"¿Cuáles son los efectos que produce la resolución que cita a las partes a oír sentencia?",
+    opts:["El juez debe dictar sentencia en 30 días y las partes pueden presentar escritos solo con autorización","El proceso queda en estado de fallo y el juez tiene 60 días para dictar sentencia; además no se admiten escritos ni pruebas de ningún género (salvo excepciones legales)","El término probatorio se suspende y las partes tienen 10 días para observaciones finales","El expediente es elevado de oficio a la Corte de Apelaciones para revisión"],
+    ans:1,
+    fb:"Notificada por estado diario la resolución que cita a las partes a oír sentencia: (1) el proceso queda en estado de fallo y el juez debe dictar sentencia definitiva dentro del término de 60 días; y (2) no se admitirán escritos ni pruebas de ningún género, salvo las excepciones del art. 433 CPC (incidentes de nulidad, medidas para mejor resolver, medidas precautorias e impugnación de instrumentos)."
+  },
+  {
+    q:"¿Cuáles son las formas anormales de término del juicio ordinario en primera instancia?",
+    opts:["Sentencia definitiva, sentencia interlocutoria y auto","Desistimiento de la demanda, abandono del procedimiento, transacción, compromiso o arbitraje, conciliación y avenimiento","Solo el desistimiento y el abandono del procedimiento","Cosa juzgada, prescripción de la acción y caducidad del proceso"],
+    ans:1,
+    fb:"El juicio ordinario puede concluir en forma anormal (sin que el juez se pronuncie sobre el fondo) mediante: (1) desistimiento de la demanda, (2) abandono del procedimiento, (3) contrato de transacción, (4) compromiso o arbitraje, (5) conciliación y (6) avenimiento. La forma normal es la dictación de la sentencia definitiva."
+  }
+];
+
+const labels=['A','B','C','D'];
+let cur=0,score=0,answered=false;
+
+function render(){
+  const q=Q[cur];
+  const pct=Math.round(cur/Q.length*100);
+  document.getElementById('q-num').textContent='Pregunta '+(cur+1);
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-text').textContent='Pregunta '+(cur+1)+' de '+Q.length;
+  document.getElementById('prog-pct').textContent=pct+'%';
+  const fb=document.getElementById('feedback');
+  fb.className='feedback';fb.textContent='';
+  document.getElementById('btn-next').disabled=true;
+  answered=false;
+  const opts=document.getElementById('options');
+  opts.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const d=document.createElement('div');
+    d.className='option';
+    d.innerHTML='<div class="opt-icon">'+labels[i]+'</div><span>'+o+'</span>';
+    d.onclick=()=>pick(i,d);
+    opts.appendChild(d);
+  });
+}
+
+function pick(i,el){
+  if(answered)return;
+  answered=true;
+  const q=Q[cur];
+  document.querySelectorAll('.option').forEach(o=>o.classList.add('disabled'));
+  if(i===q.ans){el.classList.add('correct');score++;showFb(true,q.fb);}
+  else{el.classList.add('wrong');document.querySelectorAll('.option')[q.ans].classList.add('correct');showFb(false,q.fb);}
+  document.getElementById('btn-next').disabled=false;
+}
+
+function showFb(ok,text){
+  const fb=document.getElementById('feedback');
+  fb.className='feedback show '+(ok?'ok':'fail');
+  fb.textContent=(ok?'✓ Correcto — ':'✗ Incorrecto — ')+text;
+}
+
+function next(){
+  cur++;
+  if(cur>=Q.length){showResult();return;}
+  render();
+}
+
+function showResult(){
+  document.getElementById('q-screen').style.display='none';
+  document.getElementById('r-screen').classList.add('show');
+  document.getElementById('r-score').textContent=score;
+  document.getElementById('prog-fill').style.width='100%';
+  document.getElementById('prog-text').textContent='Completado';
+  document.getElementById('prog-pct').textContent='100%';
+  const pct=score/Q.length;
+  let title,sub,stars;
+  if(pct===1){title='¡Perfecto!';sub='Dominaste el juicio ordinario de mayor cuantía de principio a fin. ¡Excelente rendimiento!';stars='⭐⭐⭐'}
+  else if(pct>=.8){title='¡Muy bien!';sub='Sólido manejo del procedimiento. Repasa los puntos que fallaste y lo tendrás dominado.';stars='⭐⭐'}
+  else if(pct>=.6){title='Vas por buen camino';sub='Buen avance. Refuerza las fases de prueba y sentencia y vuelve a intentarlo.';stars='⭐'}
+  else if(pct>=.4){title='Sigue practicando';sub='Revisa la fase de discusión, los plazos y los medios de prueba con más detalle.';stars='📖'}
+  else{title='A estudiar más';sub='Vuelve al resumen, especialmente los arts. 254, 303, 309 y 341 CPC, y da otra oportunidad al quiz.';stars='📚'}
+  document.getElementById('stars').textContent=stars;
+  document.getElementById('r-title').textContent=title;
+  document.getElementById('r-sub').textContent=sub;
+}
+
+function restart(){
+  cur=0;score=0;answered=false;
+  document.getElementById('r-screen').classList.remove('show');
+  document.getElementById('q-screen').style.display='block';
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
