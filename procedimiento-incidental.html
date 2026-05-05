@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — Incidentes</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+  .card{background:#fff;border-radius:24px;padding:clamp(1.25rem,5vw,2rem);max-width:640px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+  .header{text-align:center;margin-bottom:1.5rem}
+  .badge{display:inline-block;background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff;font-size:11px;font-weight:600;letter-spacing:.05em;padding:5px 14px;border-radius:99px;text-transform:uppercase;margin-bottom:10px}
+  h1{font-size:clamp(17px,4vw,21px);font-weight:700;color:#1a1a2e;margin-bottom:4px}
+  .subtitle{font-size:13px;color:#888}
+  .progress-bar{background:#f0f0f0;border-radius:99px;height:8px;margin-bottom:1.5rem;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#f093fb,#f5576c);border-radius:99px;transition:width .4s ease}
+  .progress-label{display:flex;justify-content:space-between;font-size:12px;color:#aaa;margin-bottom:6px}
+  .q-num{font-size:11px;font-weight:700;color:#f5576c;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+  .q-text{font-size:clamp(14px,3.5vw,16px);font-weight:600;color:#1a1a2e;line-height:1.55;margin-bottom:14px}
+  .options{display:flex;flex-direction:column;gap:9px}
+  .option{border:2px solid #e8e8f0;border-radius:14px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,3vw,14px);color:#444;transition:all .2s;display:flex;align-items:flex-start;gap:10px;background:#fff;text-align:left}
+  .option:hover:not(.disabled){border-color:#f093fb;background:#fdf4ff;color:#9d174d}
+  .option.correct{border-color:#22c55e;background:#f0fdf4;color:#15803d}
+  .option.wrong{border-color:#ef4444;background:#fef2f2;color:#b91c1c}
+  .option.disabled{cursor:default}
+  .opt-icon{width:26px;height:26px;min-width:26px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px}
+  .option.correct .opt-icon::after{content:'✓'}
+  .option.wrong .opt-icon::after{content:'✕'}
+  .feedback{border-radius:12px;padding:11px 14px;font-size:clamp(12px,3vw,13px);margin-top:12px;display:none;line-height:1.6}
+  .feedback.show{display:block}
+  .feedback.ok{background:#f0fdf4;color:#15803d;border:1.5px solid #bbf7d0}
+  .feedback.fail{background:#fef2f2;color:#b91c1c;border:1.5px solid #fecaca}
+  .actions{display:flex;justify-content:center;margin-top:1.25rem}
+  .btn{padding:12px clamp(20px,5vw,32px);border-radius:99px;border:none;cursor:pointer;font-size:15px;font-weight:600;transition:all .2s;width:100%;max-width:260px}
+  .btn-primary{background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff}
+  .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+  .btn-primary:disabled{opacity:.4;cursor:default;transform:none}
+  .btn-ghost{background:#fdf4ff;color:#9d174d}
+  .btn-ghost:hover{background:#fce7f3}
+  .result-screen{text-align:center;display:none}
+  .result-screen.show{display:block}
+  .score-circle{width:110px;height:110px;border-radius:50%;background:linear-gradient(135deg,#f093fb,#f5576c);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 1.2rem;color:#fff}
+  .score-num{font-size:34px;font-weight:800;line-height:1}
+  .score-denom{font-size:13px;opacity:.8}
+  .result-title{font-size:clamp(18px,4vw,22px);font-weight:700;color:#1a1a2e;margin-bottom:6px}
+  .result-sub{font-size:13px;color:#888;margin-bottom:1.5rem;line-height:1.6;padding:0 .5rem}
+  .stars{font-size:26px;margin-bottom:12px;letter-spacing:4px}
+  @media(max-width:400px){body{padding:.5rem}.card{border-radius:18px}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <div class="badge">Derecho Procesal</div>
+    <h1>Incidentes</h1>
+    <p class="subtitle">Procedimiento incidental ordinario y especiales · 25 preguntas</p>
+  </div>
+  <div class="progress-label">
+    <span id="prog-text">Pregunta 1 de 25</span>
+    <span id="prog-pct">0%</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+
+  <div id="q-screen">
+    <div class="q-num" id="q-num">Pregunta 1</div>
+    <div class="q-text" id="q-text"></div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-next" disabled onclick="next()">Siguiente →</button>
+    </div>
+  </div>
+
+  <div class="result-screen" id="r-screen">
+    <div class="stars" id="stars"></div>
+    <div class="score-circle">
+      <div class="score-num" id="r-score">0</div>
+      <div class="score-denom">/25</div>
+    </div>
+    <div class="result-title" id="r-title"></div>
+    <div class="result-sub" id="r-sub"></div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="restart()">Reintentar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const Q=[
+  {q:"¿Cómo se define un incidente en el procedimiento civil?",opts:["Acto procesal mediante el cual se inicia el juicio principal","Toda cuestión accesoria al juicio que requiera especial pronunciamiento del tribunal, con o sin presencia de las partes","Recurso destinado a impugnar la sentencia definitiva","Cualquier escrito que el demandante presente durante el procedimiento"],ans:1,fb:"Un incidente es toda cuestión accesoria al juicio que requiera especial pronunciamiento del tribunal, con o sin presencia de las partes. Sus elementos esenciales son la accesoriedad y el especial pronunciamiento."},
+  {q:"¿Cuál es la naturaleza jurídica de la resolución que resuelve un incidente y qué tribunal es competente para conocer de él?",opts:["Decreto; conoce un tribunal distinto del principal","Auto o sentencia interlocutoria; conoce el mismo tribunal del asunto principal por la regla general de la competencia de extensión","Sentencia definitiva; conoce siempre la Corte de Apelaciones","Sentencia interlocutoria; conoce un juez árbitro"],ans:1,fb:"La resolución que resuelve un incidente tiene la naturaleza jurídica de auto o sentencia interlocutoria. La competencia se rige por la regla general de la competencia de extensión: quien conoce del asunto principal tiene competencia para conocer los asuntos accesorios."},
+  {q:"Según el momento procesal en que se producen, los incidentes se clasifican en:",opts:["Conexos e inconexos","Antes del juicio (medida prejudicial), durante el juicio (excepción dilatoria) y después del juicio (tasación de costas)","Ordinarios y especiales","Dilatorios y no dilatorios"],ans:1,fb:"Atendiendo al momento, los incidentes se clasifican en: antes del juicio (medida prejudicial), durante el juicio (excepción dilatoria) y después del juicio (tasación de costas)."},
+  {q:"¿Cuál es la diferencia entre los incidentes de previo y especial pronunciamiento y los que no lo son?",opts:["Los de previo y especial pronunciamiento se tramitan en cuaderno separado y paralizan el juicio; los demás se tramitan en el principal","Los de previo y especial pronunciamiento se tramitan en el cuaderno principal y no permiten seguir con el juicio sin que se resuelvan; los demás se tramitan en cuaderno separado y no paralizan el procedimiento","Los de previo y especial pronunciamiento se resuelven sin escuchar a las partes; los demás siempre exigen audiencia","No hay diferencia: ambos se tramitan en el cuaderno principal y nunca paralizan"],ans:1,fb:"Los incidentes de previo y especial pronunciamiento se tramitan en el cuaderno principal y no permiten seguir con la sustanciación del juicio sin que se resuelvan (ej.: incidente de incompetencia). Los que no lo son se tramitan en cuaderno separado y no paralizan el procedimiento (ej.: privilegio de pobreza)."},
+  {q:"¿Qué tratamiento procesal corresponde dar a los incidentes inconexos?",opts:["Se reciben a prueba y luego se resuelven","Se les da traslado por 3 días antes de resolver","Pueden ser rechazados de plano por no tener relación con el asunto principal","Se acumulan con la cuestión principal y se resuelven en la sentencia definitiva"],ans:2,fb:"Los incidentes inconexos —los que no tienen relación con el asunto principal— pueden ser rechazados de plano. Los conexos, en cambio, sí se tramitan."},
+  {q:"Si el incidente se origina antes del juicio, antes de la notificación de la demanda, o coexiste con un principio del pleito, ¿cuándo debe promoverse?",opts:["En cualquier estado del juicio mientras no se haya dictado sentencia","Antes de cualquier gestión principal del pleito (contestación, réplica, dúplica, etc.); de promoverse después se rechaza de oficio, salvo que anule el juicio o sea de ritualidad necesaria","Únicamente en la audiencia de conciliación","En el escrito de réplica, sin excepción"],ans:1,fb:"Si el incidente se origina antes del juicio, antes de la notificación de la demanda o coexiste con un principio del pleito, debe promoverse antes de cualquier gestión principal (contestación, réplica, dúplica, etc.). Si se promueve después, será rechazado de oficio, salvo que el incidente anule el juicio o sea de ritualidad necesaria del juicio o para su marcha."},
+  {q:"Si el incidente nace de un hecho que sucede durante el juicio, ¿cuándo debe promoverse?",opts:["En el primer escrito posterior al hecho, sin importar el conocimiento de las partes","Al momento en que llegue a conocimiento de la parte; de promoverse después se rechaza de plano, salvo que constituya un vicio que anule el procedimiento o sea necesario para la ritualidad o marcha","Después del término probatorio, en el escrito de observaciones a la prueba","En cualquier momento, pues no hay preclusión"],ans:1,fb:"Si el incidente nace de un hecho que sucede durante el juicio, debe promoverse al momento en que llegue a conocimiento de la parte. Si se promueve después, se rechaza de plano, salvo que se trate de un vicio que anule el procedimiento o sea necesario para la ritualidad o marcha del juicio."},
+  {q:"Si una parte tiene varios incidentes con causas simultáneas, ¿cómo deben promoverse?",opts:["Pueden promoverse uno a uno a medida que la parte lo estime conveniente","Deben promoverse todos juntos; de lo contrario, los posteriores serán rechazados de oficio (salvo las excepciones generales)","Solo en segunda instancia","Se acumulan automáticamente sin necesidad de promoverlos"],ans:1,fb:"Todos los incidentes con causas simultáneas deben promoverse juntos. De no hacerse así, los posteriores serán rechazados de oficio, salvo las excepciones generales (vicio que anule el juicio, ritualidad necesaria)."},
+  {q:"Una vez admitida la demanda incidental por ser pertinente y oportuna, ¿qué hace el tribunal?",opts:["Dicta sentencia inmediatamente","Resuelve de plano o da traslado a la otra parte por un plazo de 3 días, transcurrido el cual decide si resuelve o recibe el incidente a prueba","Da traslado por 6 días","Cita inmediatamente a las partes a oír sentencia"],ans:1,fb:"Si el incidente es pertinente y oportuno, el tribunal puede resolverlo de plano o dar curso a la demanda dando traslado por un plazo de 3 días. Pasado ese plazo, decide si resuelve o recibe el incidente a prueba."},
+  {q:"¿Cuál es la duración del término probatorio en el incidente y dentro de qué plazo debe acompañarse la lista de testigos?",opts:["TP de 10 días, lista de testigos los primeros 5 días","TP de 8 días, lista de testigos dentro de los 2 primeros días","TP de 20 días, lista de testigos los primeros 5 días","TP de 5 días, sin necesidad de lista de testigos"],ans:1,fb:"El término probatorio en el incidente es de 8 días. La resolución que recibe la causa a prueba se notifica por estado diario y fija los puntos de prueba. La lista de testigos debe acompañarse dentro de los 2 primeros días."},
+  {q:"Tratándose de pruebas que se rinden fuera del territorio del juicio, ¿de qué plazo máximo dispone el término probatorio extraordinario en el incidente, y en qué plazo debe resolver el tribunal?",opts:["TP extraordinario máximo de 60 días; resuelve en 10 días","TP extraordinario máximo de 30 días; tras él, el tribunal resuelve en un plazo máximo de 3 días","TP extraordinario máximo de 15 días; resuelve en 1 día","No existe TP extraordinario en incidentes"],ans:1,fb:"El tribunal puede otorgar un término extraordinario para pruebas fuera del territorio del juicio, con un plazo máximo de 30 días. Vencido el término probatorio, el tribunal resolverá en un plazo máximo de 3 días."},
+  {q:"¿Qué recursos proceden contra la resolución que falla un incidente, según se trate de un auto o de una sentencia interlocutoria?",opts:["Contra ambos solo procede el recurso de casación","Si es un auto, procede recurso de reposición. Si es sentencia interlocutoria: cuando pone término al juicio o hace imposible su prosecución, proceden apelación y casación; si no pone término, solo apelación","Contra ambos procede únicamente recurso de queja","Contra los autos no procede recurso alguno"],ans:1,fb:"Contra el auto que resuelve un incidente procede el recurso de reposición. Contra la sentencia interlocutoria: si pone término al juicio o hace imposible su prosecución, proceden apelación y casación; si no pone término, solo procede apelación."},
+  {q:"Si una parte interpone y le rechazan dos o más incidentes en el juicio, ¿qué consecuencia procesal sufre?",opts:["Pierde el derecho a interponer cualquier nuevo incidente","Deberá, antes de promover otro incidente, hacer un depósito entre 1 y 10 UTM; si tiene privilegio de pobreza, lo paga su abogado","Pierde el juicio principal automáticamente","Es condenada en costas adicionales por 50 UTM"],ans:1,fb:"Si se interponen y rechazan dos o más incidentes en el juicio, la parte deberá hacer un depósito entre 1 y 10 UTM antes de promover otro. Si tiene privilegio de pobreza, lo paga el abogado. Esta es la sanción al incidente dilatorio de mala fe."},
+  {q:"¿Qué es la acumulación de autos?",opts:["Un mecanismo para suspender la causa por solicitud común de las partes","Un incidente especial mediante el cual se reúnen dos o más procesos que se tramitan por separado, para tener un solo juicio y terminen por una sola sentencia, manteniendo la unidad de la causa","La unión de varios escritos en un solo legajo procesal","La acumulación de pruebas rendidas en distintos juicios"],ans:1,fb:"La acumulación de autos consiste en reunir dos o más procesos que se tramitan por separado con el objeto de tener un solo juicio y que terminen por una sola sentencia, para mantener la unidad de la causa."},
+  {q:"¿En qué oportunidad puede solicitarse la acumulación de autos?",opts:["En juicio ordinario, en cualquier estado antes de la sentencia; en juicio ejecutivo, antes del pago de la obligación","Solo en la audiencia de conciliación","Únicamente al iniciar el juicio","Solamente en segunda instancia"],ans:0,fb:"La oportunidad para promover la acumulación de autos depende del tipo de juicio: en el juicio ordinario, en cualquier estado antes de la sentencia; en el juicio ejecutivo, antes del pago de la obligación. El sujeto activo es cualquiera de las partes de alguno de los juicios."},
+  {q:"Cuando los procesos a acumular se siguen ante distintos tribunales, ¿cómo se determina el tribunal competente?",opts:["Siempre el tribunal donde se inició el primer proceso","Si los tribunales son de igual jerarquía, será competente el más antiguo; si son de distinta jerarquía, el de mayor jerarquía","Siempre la Corte de Apelaciones que corresponda","Por sorteo entre los tribunales involucrados"],ans:1,fb:"Si los procesos se siguen ante un solo tribunal, ese será el competente. Si están en tribunales distintos hay que distinguir: si son de igual jerarquía será competente el más antiguo; si son de distinta jerarquía, será competente el de mayor jerarquía."},
+  {q:"¿Cuál es la diferencia entre la inhibitoria y la declinatoria como vías para promover una cuestión de competencia?",opts:["La inhibitoria se dirige al tribunal incompetente; la declinatoria al competente","La inhibitoria se dirige al tribunal que se estima competente para que requiera al incompetente; la declinatoria se dirige al tribunal que se estima incompetente","Ambas se dirigen al mismo tribunal y son sinónimas","La inhibitoria solo procede en segunda instancia; la declinatoria solo en primera"],ans:1,fb:"Las cuestiones de competencia pueden plantearse por dos vías: inhibitoria, dirigida al tribunal que se estima competente para que requiera al que está conociendo del asunto; o declinatoria, dirigida ante el tribunal que se estima incompetente. La declinatoria se tramita conforme a las reglas de los incidentes ordinarios."},
+  {q:"¿Qué efecto produce la inhibitoria sobre la tramitación de la causa principal?",opts:["Detiene la tramitación de la causa principal, salvo que existan providencias urgentes; una vez denegada por el tribunal requerido, se sigue tramitando aunque haya contienda de competencia","No tiene efecto alguno sobre la causa principal","Suspende todos los plazos por 60 días","Anula automáticamente todo lo obrado"],ans:0,fb:"La inhibitoria detiene la tramitación de la causa principal, salvo que existan providencias urgentes. Una vez denegada por el tribunal requerido, se sigue tramitando, aunque haya contienda de competencia. La contienda se tramita en única instancia ante el tribunal superior."},
+  {q:"En materia de implicancias y recusaciones, ¿de qué plazo disponen las partes para reclamar y bajo qué condición?",opts:["3 días, sin condiciones","5 días desde la notificación; solo puede reclamarla la parte a quien le causa un perjuicio. Los jueces, en cambio, deben declararse de oficio si saben que están dentro de una causal de implicancia","10 días, cualquier parte","30 días, solo el demandante"],ans:1,fb:"Los jueces deben declararse de oficio si saben que están dentro de una causal de implicancia. Las partes tienen un plazo de 5 días desde la notificación para reclamar por las recusaciones, y solo puede solicitarla la parte a quien le causa perjuicio."},
+  {q:"¿Qué efecto produce el desistimiento de la demanda?",opts:["Cosa juzgada formal, permitiendo discutir la pretensión en otro procedimiento","Cosa juzgada sustancial: se extinguen las acciones para las partes y los afectados por la resolución","Solo suspende el juicio por seis meses","Ningún efecto, pues puede revocarse"],ans:1,fb:"El desistimiento de la demanda produce efecto de cosa juzgada sustancial: se extinguen las acciones para las partes y los afectados por la resolución. La sentencia que lo acoge es una sentencia interlocutoria de primer grado. En primera instancia puede solicitarse desde la notificación de la demanda hasta la citación a oír sentencia; en segunda instancia, hasta la vista de la causa."},
+  {q:"Respecto del desistimiento de la demanda y del abandono del procedimiento, ¿qué facultades requiere el mandatario judicial?",opts:["Para ambos requiere facultades especiales","Para el desistimiento el mandatario requiere facultades especiales; para alegar el abandono no las requiere","Para el desistimiento no requiere facultades; para el abandono sí","Ninguno requiere facultades especiales"],ans:1,fb:"Para el desistimiento de la demanda, el mandatario requiere facultades especiales. En cambio, para alegar el abandono del procedimiento, el mandatario no requiere facultades especiales."},
+  {q:"¿Cuáles son los requisitos del abandono del procedimiento?",opts:["Inactividad de todas las partes durante 6 meses desde la última gestión útil para dar curso progresivo al asunto, petición del demandado y que el demandado no haya renunciado al abandono","Inactividad solo del demandante durante 3 meses, sin necesidad de petición","Inactividad de las partes durante 1 año, declarable de oficio","Inactividad por 6 meses, declarable de oficio sin petición"],ans:0,fb:"El abandono del procedimiento es una sanción procesal por inactividad. Sus requisitos son: (1) inactividad de todas las partes; (2) plazo de 6 meses desde la última resolución recaída en una gestión útil para dar curso progresivo al asunto; (3) petición del demandado; y (4) que el demandado no haya renunciado al abandono. No aplica en procedimientos de liquidación, sociedades, comunidades y herencias."},
+  {q:"¿Qué efectos produce el abandono del procedimiento?",opts:["Cosa juzgada sustancial: extingue las acciones y pretensiones para siempre","Cosa juzgada formal: termina el juicio, pero las acciones y pretensiones NO se extinguen, subsistiendo los actos y contratos parciales realizados previamente; permite discutir la acción o pretensión en un procedimiento distinto","Solo suspende temporalmente el juicio por 60 días","Anula todas las actuaciones procesales realizadas"],ans:1,fb:"El abandono solo produce cosa juzgada formal —permite discutir la acción o pretensión en un procedimiento distinto—. Termina el juicio, pero las acciones y pretensiones no se extinguen y subsisten los actos y contratos parciales realizados previamente. Puede alegarse tanto como acción como excepción."},
+  {q:"¿Cuáles son los requisitos del incidente de nulidad procesal?",opts:["Solo la existencia de un proceso y un vicio","Existencia de un proceso, existencia de un vicio, que el vicio cause un perjuicio solo reparable con la resolución de nulidad, relación causal y declaración de nulidad","Solo el perjuicio de cualquier parte, sin necesidad de vicio","La sola voluntad del juez"],ans:1,fb:"Los requisitos del incidente de nulidad son: (1) existencia de un proceso; (2) existencia de un vicio; (3) que el vicio cause un perjuicio solo reparable con la resolución de nulidad; (4) la relación causal; y (5) la declaración de nulidad. Procede cuando la ley lo señale o cuando el vicio cause perjuicio solo reparable por la declaración de nulidad."},
+  {q:"¿Cuáles son los plazos para promover el incidente de nulidad procesal, ordinario y especiales?",opts:["Ordinario: 5 días desde que se enteró del vicio (excepción: dilatorias e incompetencia absoluta). Especiales: si la parte está rebelde por fuerza mayor, 3 días desde que cesó la fuerza; si está rebelde por falta de notificación, 5 días desde que se enteró","Siempre 10 días desde el vicio, sin excepciones","Siempre 30 días desde la sentencia definitiva","No tiene plazo: puede promoverse en cualquier momento, incluso después de la ejecutoria"],ans:0,fb:"El incidente ordinario de nulidad tiene un plazo de 5 días desde que la parte se enteró o se acredita que se enteró del vicio (excepción: las excepciones dilatorias y la incompetencia absoluta). Para los incidentes de nulidad especiales: si la parte está rebelde por razones de fuerza mayor, el plazo es de 3 días desde que cesó la fuerza; si está rebelde porque no se le notificó, el plazo es de 5 días desde que se enteró (notificación ficta)."}
+];
+
+const labels=['A','B','C','D'];
+let cur=0,score=0,answered=false;
+
+function render(){
+  const q=Q[cur];
+  const pct=Math.round(cur/Q.length*100);
+  document.getElementById('q-num').textContent='Pregunta '+(cur+1);
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-text').textContent='Pregunta '+(cur+1)+' de '+Q.length;
+  document.getElementById('prog-pct').textContent=pct+'%';
+  const fb=document.getElementById('feedback');
+  fb.className='feedback';fb.textContent='';
+  document.getElementById('btn-next').disabled=true;
+  answered=false;
+  const opts=document.getElementById('options');
+  opts.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const d=document.createElement('div');
+    d.className='option';
+    d.innerHTML='<div class="opt-icon">'+labels[i]+'</div><span>'+o+'</span>';
+    d.onclick=()=>pick(i,d);
+    opts.appendChild(d);
+  });
+}
+
+function pick(i,el){
+  if(answered)return;
+  answered=true;
+  const q=Q[cur];
+  document.querySelectorAll('.option').forEach(o=>o.classList.add('disabled'));
+  if(i===q.ans){el.classList.add('correct');score++;showFb(true,q.fb);}
+  else{el.classList.add('wrong');document.querySelectorAll('.option')[q.ans].classList.add('correct');showFb(false,q.fb);}
+  document.getElementById('btn-next').disabled=false;
+}
+
+function showFb(ok,text){
+  const fb=document.getElementById('feedback');
+  fb.className='feedback show '+(ok?'ok':'fail');
+  fb.textContent=(ok?'✓ Correcto — ':'✗ Incorrecto — ')+text;
+}
+
+function next(){
+  cur++;
+  if(cur>=Q.length){showResult();return;}
+  render();
+}
+
+function showResult(){
+  document.getElementById('q-screen').style.display='none';
+  document.getElementById('r-screen').classList.add('show');
+  document.getElementById('r-score').textContent=score;
+  document.getElementById('prog-fill').style.width='100%';
+  document.getElementById('prog-text').textContent='Completado';
+  document.getElementById('prog-pct').textContent='100%';
+  const pct=score/Q.length;
+  let title,sub,stars;
+  if(pct===1){title='¡Perfecto!';sub='Dominaste el procedimiento incidental de principio a fin. ¡Excelente!';stars='⭐⭐⭐'}
+  else if(pct>=.75){title='¡Muy bien!';sub='Sólido manejo de los incidentes. Unos pocos detalles más y lo tienes dominado.';stars='⭐⭐'}
+  else if(pct>=.5){title='Vas por buen camino';sub='Repasa las preguntas que fallaste —sobre todo plazos y los incidentes especiales— y vuelve a intentarlo.';stars='⭐'}
+  else{title='Sigue estudiando';sub='Revisa el resumen de incidentes con calma y da otra oportunidad al quiz.';stars='📚'}
+  document.getElementById('stars').textContent=stars;
+  document.getElementById('r-title').textContent=title;
+  document.getElementById('r-sub').textContent=sub;
+}
+
+function restart(){
+  cur=0;score=0;answered=false;
+  document.getElementById('r-screen').classList.remove('show');
+  document.getElementById('q-screen').style.display='block';
+  render();
+}
+
+render();
+</script>
+</body>
+</html>

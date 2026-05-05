@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — Juicio Sumario</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+  .card{background:#fff;border-radius:24px;padding:clamp(1.25rem,5vw,2rem);max-width:640px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+  .header{text-align:center;margin-bottom:1.5rem}
+  .badge{display:inline-block;background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff;font-size:11px;font-weight:600;letter-spacing:.05em;padding:5px 14px;border-radius:99px;text-transform:uppercase;margin-bottom:10px}
+  h1{font-size:clamp(17px,4vw,21px);font-weight:700;color:#1a1a2e;margin-bottom:4px}
+  .subtitle{font-size:13px;color:#888}
+  .progress-bar{background:#f0f0f0;border-radius:99px;height:8px;margin-bottom:1.5rem;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#f093fb,#f5576c);border-radius:99px;transition:width .4s ease}
+  .progress-label{display:flex;justify-content:space-between;font-size:12px;color:#aaa;margin-bottom:6px}
+  .q-num{font-size:11px;font-weight:700;color:#f5576c;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+  .q-text{font-size:clamp(14px,3.5vw,16px);font-weight:600;color:#1a1a2e;line-height:1.55;margin-bottom:14px}
+  .options{display:flex;flex-direction:column;gap:9px}
+  .option{border:2px solid #e8e8f0;border-radius:14px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,3vw,14px);color:#444;transition:all .2s;display:flex;align-items:flex-start;gap:10px;background:#fff;text-align:left}
+  .option:hover:not(.disabled){border-color:#f093fb;background:#fdf4ff;color:#9d174d}
+  .option.correct{border-color:#22c55e;background:#f0fdf4;color:#15803d}
+  .option.wrong{border-color:#ef4444;background:#fef2f2;color:#b91c1c}
+  .option.disabled{cursor:default}
+  .opt-icon{width:26px;height:26px;min-width:26px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px}
+  .option.correct .opt-icon::after{content:'✓'}
+  .option.wrong .opt-icon::after{content:'✕'}
+  .feedback{border-radius:12px;padding:11px 14px;font-size:clamp(12px,3vw,13px);margin-top:12px;display:none;line-height:1.6}
+  .feedback.show{display:block}
+  .feedback.ok{background:#f0fdf4;color:#15803d;border:1.5px solid #bbf7d0}
+  .feedback.fail{background:#fef2f2;color:#b91c1c;border:1.5px solid #fecaca}
+  .actions{display:flex;justify-content:center;margin-top:1.25rem}
+  .btn{padding:12px clamp(20px,5vw,32px);border-radius:99px;border:none;cursor:pointer;font-size:15px;font-weight:600;transition:all .2s;width:100%;max-width:260px}
+  .btn-primary{background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff}
+  .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+  .btn-primary:disabled{opacity:.4;cursor:default;transform:none}
+  .btn-ghost{background:#fdf4ff;color:#9d174d}
+  .btn-ghost:hover{background:#fce7f3}
+  .result-screen{text-align:center;display:none}
+  .result-screen.show{display:block}
+  .score-circle{width:110px;height:110px;border-radius:50%;background:linear-gradient(135deg,#f093fb,#f5576c);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 1.2rem;color:#fff}
+  .score-num{font-size:34px;font-weight:800;line-height:1}
+  .score-denom{font-size:13px;opacity:.8}
+  .result-title{font-size:clamp(18px,4vw,22px);font-weight:700;color:#1a1a2e;margin-bottom:6px}
+  .result-sub{font-size:13px;color:#888;margin-bottom:1.5rem;line-height:1.6;padding:0 .5rem}
+  .stars{font-size:26px;margin-bottom:12px;letter-spacing:4px}
+  @media(max-width:400px){body{padding:.5rem}.card{border-radius:18px}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <div class="badge">Derecho Procesal</div>
+    <h1>Juicio Sumario</h1>
+    <p class="subtitle">Tramitación, sustitución y características · 25 preguntas</p>
+  </div>
+  <div class="progress-label">
+    <span id="prog-text">Pregunta 1 de 25</span>
+    <span id="prog-pct">0%</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+
+  <div id="q-screen">
+    <div class="q-num" id="q-num">Pregunta 1</div>
+    <div class="q-text" id="q-text"></div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-next" disabled onclick="next()">Siguiente →</button>
+    </div>
+  </div>
+
+  <div class="result-screen" id="r-screen">
+    <div class="stars" id="stars"></div>
+    <div class="score-circle">
+      <div class="score-num" id="r-score">0</div>
+      <div class="score-denom">/25</div>
+    </div>
+    <div class="result-title" id="r-title"></div>
+    <div class="result-sub" id="r-sub"></div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="restart()">Reintentar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const Q=[
+  {q:"¿Cómo se define el juicio sumario según el resumen?",opts:["Procedimiento ejecutivo destinado al cumplimiento forzado de obligaciones que constan en título ejecutivo","Procedimiento breve y concentrado, de aplicación general o especial, según la naturaleza de la acción o los casos que señale la ley","Procedimiento aplicable únicamente a las controversias de mínima cuantía","Procedimiento de única instancia que solo permite sentencias declarativas"],ans:1,fb:"El juicio sumario es un procedimiento breve y concentrado, de aplicación general o especial según la naturaleza de la acción que se haga valer o los casos que señale la ley. Su sentencia puede ser meramente declarativa, constitutiva o de condena."},
+  {q:"¿Cuál es la principal diferencia entre el juicio sumario ordinario (general) y el sumario extraordinario (especial) del art. 680 inc. 2°?",opts:["El ordinario procede para causas civiles y el extraordinario solo para causas comerciales","El ordinario admite sustitución al juicio ordinario; el extraordinario nunca admite tal sustitución, porque su aplicación es obligatoria","El ordinario lo determina el legislador; el extraordinario lo determina el tribunal de primera instancia","Ambos son lo mismo: la distinción es solo doctrinal"],ans:1,fb:"El sumario ordinario o general aplica cuando la naturaleza de la acción requiere tramitación rápida (lo determina el tribunal de primera instancia) y admite sustitución al juicio ordinario. El sumario extraordinario o especial está fijado por el legislador en el art. 680 inc. 2° y nunca admite sustitución, ya que su aplicación es obligatoria para el tribunal y las partes."},
+  {q:"¿Cuál de los siguientes NO corresponde a un caso de juicio sumario extraordinario contemplado en el art. 680 inc. 2°?",opts:["Juicios sobre cobro de honorarios","Juicios sobre depósito necesario y comodato precario","Juicios ejecutivos por obligaciones de dar contenidas en escritura pública","Cuestiones sobre constitución, ejercicio, modificación o extinción de servidumbres naturales o legales"],ans:2,fb:"Los juicios ejecutivos no son casos del art. 680 inc. 2°. Este sí incluye, entre otros: cobro de honorarios; depósito necesario y comodato precario; servidumbres naturales o legales; remoción de guardadores; rendición de cuenta impuesta por ley o contrato; el derecho del art. 945 CC para hacer cegar un pozo; y las acciones civiles derivadas de delito o cuasidelito con sentencia condenatoria ejecutoriada."},
+  {q:"Tratándose de las acciones civiles derivadas de un delito o cuasidelito, ¿bajo qué condición se tramitan conforme al juicio sumario según el art. 680 inc. 2° letra i)?",opts:["Siempre, sin requisitos adicionales","Siempre que exista sentencia condenatoria ejecutoriada","Solo cuando el monto de los perjuicios supere las 500 UTM","Solo cuando el delito sea de acción privada"],ans:1,fb:"Las acciones civiles derivadas de un delito o cuasidelito se tramitan conforme al juicio sumario, en virtud del art. 59 CPP, siempre que exista sentencia condenatoria ejecutoriada. Sin esa condición, no procede esta vía."},
+  {q:"¿De qué forma puede iniciarse el juicio sumario?",opts:["Únicamente por demanda escrita que cumpla los requisitos del art. 254 CPC","Únicamente por demanda verbal ante el tribunal","Por demanda escrita o verbal, debiendo cumplir los requisitos del art. 254 CPC","Por simple solicitud del interesado, sin requisitos especiales"],ans:2,fb:"El juicio sumario se inicia con una demanda que puede ser escrita o verbal, pero en cualquier caso debe cumplir con los requisitos del art. 254 CPC."},
+  {q:"Una vez presentada la demanda, ¿a qué plazo cita el tribunal a la audiencia de contestación (comparendo)?",opts:["Al tercer día hábil desde la presentación de la demanda","Al quinto día hábil después de la última notificación","Al décimo día hábil desde la notificación al demandado","A los quince días corridos desde la presentación"],ans:1,fb:"El tribunal cita a la audiencia (comparendo) al quinto día hábil después de la última notificación. Esto es coherente con el principio de concentración que rige el procedimiento sumario."},
+  {q:"¿Cómo se notifica la primera resolución que cita a la audiencia en el juicio sumario?",opts:["Al demandado por estado diario y al demandante personalmente","A ambas partes personalmente","Al demandado personalmente y al demandante por estado diario","A ambas partes por carta certificada"],ans:2,fb:"La primera resolución se notifica al demandado personalmente —porque es la que da inicio al juicio respecto de él— mientras que al demandante se le notifica por el estado diario."},
+  {q:"Si en el comparendo asisten ambas partes, ¿qué actuaciones tienen lugar?",opts:["Solo la conciliación obligatoria; la prueba se rinde en una audiencia posterior","Ratificación de la demanda, contestación con excepciones, conciliación obligatoria, recepción de la causa a prueba (si corresponde) o citación a oír sentencia","Únicamente la contestación de la demanda y oposición de excepciones dilatorias","Solo la fijación de los puntos de prueba, sin posibilidad de conciliar"],ans:1,fb:"Si asisten ambas partes, en el comparendo tienen lugar: ratificación de la demanda, contestación con excepciones, conciliación obligatoria, y luego se recibe la causa a prueba (si hay hechos sustanciales, controvertidos y pertinentes) o se cita a las partes a oír sentencia."},
+  {q:"Si al comparendo solo asiste el demandante y lo solicita con fundamento plausible, ¿qué puede ocurrir?",opts:["Se debe suspender el procedimiento hasta que comparezca el demandado","Se recibe la causa a prueba si es necesario y, a petición del demandante, el tribunal puede acceder provisionalmente a la demanda","Se dicta sentencia definitiva acogiendo la demanda en rebeldía","Se cita a una nueva audiencia con apercibimiento al demandado"],ans:1,fb:"Si solo asiste el demandante, el juez puede recibir la causa a prueba si es necesario o, si el demandante lo solicita con fundamento plausible, puede acceder provisionalmente a la demanda."},
+  {q:"Si al comparendo solo asiste el demandado, ¿cómo continúa el procedimiento?",opts:["Se accede automáticamente a las excepciones del demandado y se rechaza la demanda","Se recibe la causa a prueba si es necesario; en caso contrario, se cita a las partes a oír sentencia","Se suspende el juicio hasta que comparezca el demandante","Se declara abandonado el procedimiento"],ans:1,fb:"Si solo asiste el demandado, se recibe la causa a prueba si es necesario y, en caso contrario, se cita a las partes a oír sentencia. La inasistencia del demandante no implica abandono ni rechazo automático de su pretensión."},
+  {q:"¿Qué ocurre si al comparendo no comparece ni el demandante ni el demandado?",opts:["Se declara abandonado el procedimiento de pleno derecho","No se celebra el comparendo, pero la causa sigue adelante","Se cita a una nueva audiencia con apercibimiento de archivo","Se acoge la demanda en rebeldía del demandado"],ans:1,fb:"Si no comparece ninguna de las partes, no se celebra el comparendo, pero la causa sigue su curso adelante. No hay sanción de abandono ni nueva citación automática por esta sola circunstancia."},
+  {q:"Cuando la intervención del defensor público es obligatoria y este no comparece a la audiencia, ¿qué ocurre?",opts:["La audiencia se celebra igualmente y se designa otro defensor en el acto","No se celebra el comparendo","Se cita inmediatamente a las partes a oír sentencia","El demandado pierde el derecho a contestar la demanda"],ans:1,fb:"Si la intervención del defensor público es obligatoria y este no comparece, no se celebra el comparendo. Su presencia, en estos casos, resulta indispensable para la validez de la audiencia."},
+  {q:"¿Cuál es la duración del término probatorio en el juicio sumario?",opts:["5 días hábiles","8 días","10 días","20 días, igual que el juicio ordinario"],ans:1,fb:"El término probatorio en el juicio sumario es de 8 días. Vencido este término, el tribunal cita a las partes a oír sentencia (lo mismo ocurre si no hay hechos sustanciales, pertinentes y controvertidos)."},
+  {q:"En materia de prueba en el juicio sumario, ¿qué nota distintiva existe respecto del procedimiento ordinario?",opts:["No existe etapa de observaciones a la prueba","La prueba se rinde exclusivamente por declaración de testigos","El término probatorio puede ampliarse hasta 30 días","La prueba documental no está admitida"],ans:0,fb:"En el juicio sumario no existe etapa de observaciones a la prueba. Esta es una de las manifestaciones del principio de concentración que caracteriza al procedimiento."},
+  {q:"¿En qué plazo debe dictarse la sentencia definitiva en el juicio sumario?",opts:["Dentro de los 5 días siguientes a la última actuación de prueba","Dentro de los 10 días siguientes a la fecha de la resolución que citó a las partes a oír sentencia","Dentro de los 30 días siguientes al vencimiento del término probatorio","Dentro de los 60 días siguientes a la presentación de la demanda"],ans:1,fb:"La sentencia definitiva debe dictarse en el plazo de 10 días siguientes a la fecha de la resolución que citó a las partes a oír sentencia."},
+  {q:"¿En cuáles casos procede la sustitución del juicio sumario al juicio ordinario?",opts:["En todos los casos del art. 680, sin excepción","Solo en los casos del inciso primero del art. 680 (sumario general u ordinario, donde la naturaleza de la acción requiere tramitación rápida)","Solo en los casos del inciso segundo del art. 680 (sumario extraordinario)","Únicamente cuando ambas partes lo soliciten de común acuerdo"],ans:1,fb:"La sustitución de sumario a ordinario solo procede en los casos del inciso primero del art. 680 (sumario general u ordinario). En los demás casos —sumario extraordinario del inciso segundo— la sustitución no procede, y de hacerse sería nulo por no aplicarse el procedimiento que la ley contempla especialmente."},
+  {q:"Conforme a la opinión doctrinal recogida en el resumen, ¿en qué oportunidad debería solicitarse cada tipo de sustitución?",opts:["La sustitución de sumario a ordinario se solicita como excepción dilatoria; la de ordinario a sumario, en el comparendo","La sustitución de sumario a ordinario se solicita en la audiencia de discusión (comparendo); la de ordinario a sumario, como excepción dilatoria del art. 303 N° 6, antes de contestar la demanda","Ambas sustituciones deben solicitarse antes de notificar la demanda","Ambas sustituciones solo pueden solicitarse en segunda instancia"],ans:1,fb:"Aunque el legislador no lo señala expresamente, parte de la doctrina indica que la sustitución de sumario a ordinario debería solicitarse en la audiencia de discusión (comparendo), mientras que la de ordinario a sumario debería plantearse como excepción dilatoria del art. 303 N° 6, antes de contestar la demanda."},
+  {q:"¿Cómo se tramita la solicitud de sustitución de procedimiento?",opts:["Como demanda autónoma que da origen a un nuevo juicio","Como incidente de previo y especial pronunciamiento, debiendo resolverse antes y no en la sentencia definitiva","Como recurso de reposición ante el mismo tribunal","Como excepción perentoria que se resuelve junto con el fondo"],ans:1,fb:"La solicitud de sustitución se tramita como incidente, pero con carácter de previo y especial pronunciamiento. Esto significa que debe resolverse previamente y no en la sentencia definitiva (regla general de los incidentes en juicio sumario, que normalmente se resuelven con el fondo)."},
+  {q:"¿Qué efectos produce la resolución que acoge la sustitución del procedimiento?",opts:["Anula todas las actuaciones realizadas conforme al procedimiento anterior","Solo tiene efectos para el futuro; las actuaciones practicadas conforme al procedimiento anterior siguen siendo válidas","Produce efectos retroactivos hasta la presentación de la demanda","Suspende el juicio por 30 días para readecuar las actuaciones"],ans:1,fb:"La resolución que acoge la sustitución solo tiene efectos hacia el futuro. Las actuaciones practicadas conforme al procedimiento anterior conservan su validez, evitando así el desperdicio de actos procesales ya realizados."},
+  {q:"Si el tribunal accede provisionalmente a la demanda, ¿de qué plazo dispone el demandado para oponerse?",opts:["3 días desde la notificación","5 días desde la notificación","10 días desde la notificación","15 días desde la notificación"],ans:1,fb:"Si se accede provisionalmente a la demanda, el demandado puede oponerse dentro del término de 5 días contados desde la notificación."},
+  {q:"Si el demandado se opone a la aceptación provisional de la demanda, ¿qué hace el tribunal?",opts:["Deja sin efecto el cumplimiento provisorio decretado y archiva la causa","Recibe la causa a prueba o cita a las partes para oír sentencia, y se cita a una nueva audiencia procediendo como si fuese la primera","Deriva el conocimiento del asunto al juicio ordinario","Confirma de inmediato la aceptación provisional sin más trámite"],ans:1,fb:"Si el demandado se opone, el tribunal recibe la causa a prueba o cita a las partes para oír sentencia, y además se cita a una nueva audiencia procediendo como si fuese la primera."},
+  {q:"¿Qué ocurre con el cumplimiento provisorio decretado mientras se tramita la oposición del demandado a la aceptación provisional de la demanda?",opts:["Se suspende automáticamente hasta que el tribunal resuelva la oposición","Se mantiene; en ningún caso se suspende el cumplimiento provisorio decretado","Se suspende solo si el demandado rinde caución suficiente","Se deja sin efecto solo respecto de las prestaciones aún no cumplidas"],ans:1,fb:"En ningún caso se suspende el cumplimiento provisorio decretado, aunque el demandado se haya opuesto. La oposición no tiene efecto suspensivo sobre lo ya decretado."},
+  {q:"¿Cómo se tramitan los incidentes en el juicio sumario, como regla general?",opts:["Por cuaderno separado, suspendiendo la tramitación de la cuestión principal","En la misma audiencia de contestación, conjuntamente con la cuestión principal y sin paralizar su curso, pronunciándose la sentencia definitiva sobre ellos junto con el fondo","Mediante solicitud al tribunal de alzada, que los resuelve antes de continuar","En audiencia especial citada con 30 días de anticipación"],ans:1,fb:"Los incidentes en el juicio sumario deben promoverse y tramitarse en la misma audiencia de contestación, conjuntamente con la cuestión principal, sin paralizar su curso. La sentencia definitiva se pronuncia sobre los incidentes junto con el fondo del asunto, salvo que sean incompatibles con lo resuelto."},
+  {q:"¿En qué efectos se concede la apelación de la sentencia definitiva y de la resolución que acoge la sustitución del procedimiento ordinario a sumario?",opts:["Solo en el efecto devolutivo","En ambos efectos (devolutivo y suspensivo)","Solo en el efecto suspensivo","Sin efecto alguno: son inapelables"],ans:1,fb:"La sentencia definitiva y la resolución que acoge la sustitución del procedimiento ordinario a sumario se conceden apelables en ambos efectos. Las demás resoluciones —incluso la que accede provisionalmente a la demanda— se conceden en el solo efecto devolutivo."},
+  {q:"¿Cuál es una característica especial de la competencia del tribunal de segunda instancia en el juicio sumario?",opts:["Solo puede revisar las cuestiones de derecho, nunca las de hecho","Posee un mayor grado de competencia que en el juicio ordinario, pudiendo pronunciarse sobre peticiones que no hayan sido resueltas en el fallo apelado","Su competencia se reduce únicamente a confirmar o revocar la sentencia, sin posibilidad de modificarla","No puede recibir nuevas pruebas en ningún caso"],ans:1,fb:"Una característica destacada del juicio sumario es que el tribunal de segunda instancia posee un mayor grado de competencia que en el juicio ordinario, pudiendo pronunciarse sobre peticiones que no hayan sido resueltas en el fallo apelado. Esto se vincula con el principio de concentración que rige el procedimiento."}
+];
+
+const labels=['A','B','C','D'];
+let cur=0,score=0,answered=false;
+
+function render(){
+  const q=Q[cur];
+  const pct=Math.round(cur/Q.length*100);
+  document.getElementById('q-num').textContent='Pregunta '+(cur+1);
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-text').textContent='Pregunta '+(cur+1)+' de '+Q.length;
+  document.getElementById('prog-pct').textContent=pct+'%';
+  const fb=document.getElementById('feedback');
+  fb.className='feedback';fb.textContent='';
+  document.getElementById('btn-next').disabled=true;
+  answered=false;
+  const opts=document.getElementById('options');
+  opts.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const d=document.createElement('div');
+    d.className='option';
+    d.innerHTML='<div class="opt-icon">'+labels[i]+'</div><span>'+o+'</span>';
+    d.onclick=()=>pick(i,d);
+    opts.appendChild(d);
+  });
+}
+
+function pick(i,el){
+  if(answered)return;
+  answered=true;
+  const q=Q[cur];
+  document.querySelectorAll('.option').forEach(o=>o.classList.add('disabled'));
+  if(i===q.ans){el.classList.add('correct');score++;showFb(true,q.fb);}
+  else{el.classList.add('wrong');document.querySelectorAll('.option')[q.ans].classList.add('correct');showFb(false,q.fb);}
+  document.getElementById('btn-next').disabled=false;
+}
+
+function showFb(ok,text){
+  const fb=document.getElementById('feedback');
+  fb.className='feedback show '+(ok?'ok':'fail');
+  fb.textContent=(ok?'✓ Correcto — ':'✗ Incorrecto — ')+text;
+}
+
+function next(){
+  cur++;
+  if(cur>=Q.length){showResult();return;}
+  render();
+}
+
+function showResult(){
+  document.getElementById('q-screen').style.display='none';
+  document.getElementById('r-screen').classList.add('show');
+  document.getElementById('r-score').textContent=score;
+  document.getElementById('prog-fill').style.width='100%';
+  document.getElementById('prog-text').textContent='Completado';
+  document.getElementById('prog-pct').textContent='100%';
+  const pct=score/Q.length;
+  let title,sub,stars;
+  if(pct===1){title='¡Perfecto!';sub='Dominaste el juicio sumario de principio a fin. ¡Excelente!';stars='⭐⭐⭐'}
+  else if(pct>=.75){title='¡Muy bien!';sub='Sólido manejo del procedimiento sumario. Unos pocos detalles más y lo tienes dominado.';stars='⭐⭐'}
+  else if(pct>=.5){title='Vas por buen camino';sub='Repasa las preguntas que fallaste —sobre todo plazos y comparendo— y vuelve a intentarlo.';stars='⭐'}
+  else{title='Sigue estudiando';sub='Revisa el resumen del juicio sumario con calma y da otra oportunidad al quiz.';stars='📚'}
+  document.getElementById('stars').textContent=stars;
+  document.getElementById('r-title').textContent=title;
+  document.getElementById('r-sub').textContent=sub;
+}
+
+function restart(){
+  cur=0;score=0;answered=false;
+  document.getElementById('r-screen').classList.remove('show');
+  document.getElementById('q-screen').style.display='block';
+  render();
+}
+
+render();
+</script>
+</body>
+</html>

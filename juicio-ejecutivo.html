@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — Juicio Ejecutivo</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+  .card{background:#fff;border-radius:24px;padding:clamp(1.25rem,5vw,2rem);max-width:640px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+  .header{text-align:center;margin-bottom:1.5rem}
+  .badge{display:inline-block;background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff;font-size:11px;font-weight:600;letter-spacing:.05em;padding:5px 14px;border-radius:99px;text-transform:uppercase;margin-bottom:10px}
+  h1{font-size:clamp(17px,4vw,21px);font-weight:700;color:#1a1a2e;margin-bottom:4px}
+  .subtitle{font-size:13px;color:#888}
+  .progress-bar{background:#f0f0f0;border-radius:99px;height:8px;margin-bottom:1.5rem;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#f093fb,#f5576c);border-radius:99px;transition:width .4s ease}
+  .progress-label{display:flex;justify-content:space-between;font-size:12px;color:#aaa;margin-bottom:6px}
+  .q-num{font-size:11px;font-weight:700;color:#f5576c;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+  .q-text{font-size:clamp(14px,3.5vw,16px);font-weight:600;color:#1a1a2e;line-height:1.55;margin-bottom:14px}
+  .options{display:flex;flex-direction:column;gap:9px}
+  .option{border:2px solid #e8e8f0;border-radius:14px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,3vw,14px);color:#444;transition:all .2s;display:flex;align-items:flex-start;gap:10px;background:#fff;text-align:left}
+  .option:hover:not(.disabled){border-color:#f093fb;background:#fdf4ff;color:#9d174d}
+  .option.correct{border-color:#22c55e;background:#f0fdf4;color:#15803d}
+  .option.wrong{border-color:#ef4444;background:#fef2f2;color:#b91c1c}
+  .option.disabled{cursor:default}
+  .opt-icon{width:26px;height:26px;min-width:26px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px}
+  .option.correct .opt-icon::after{content:'✓'}
+  .option.wrong .opt-icon::after{content:'✕'}
+  .feedback{border-radius:12px;padding:11px 14px;font-size:clamp(12px,3vw,13px);margin-top:12px;display:none;line-height:1.6}
+  .feedback.show{display:block}
+  .feedback.ok{background:#f0fdf4;color:#15803d;border:1.5px solid #bbf7d0}
+  .feedback.fail{background:#fef2f2;color:#b91c1c;border:1.5px solid #fecaca}
+  .actions{display:flex;justify-content:center;margin-top:1.25rem}
+  .btn{padding:12px clamp(20px,5vw,32px);border-radius:99px;border:none;cursor:pointer;font-size:15px;font-weight:600;transition:all .2s;width:100%;max-width:260px}
+  .btn-primary{background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff}
+  .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+  .btn-primary:disabled{opacity:.4;cursor:default;transform:none}
+  .btn-ghost{background:#fdf4ff;color:#9d174d}
+  .btn-ghost:hover{background:#fce7f3}
+  .result-screen{text-align:center;display:none}
+  .result-screen.show{display:block}
+  .score-circle{width:110px;height:110px;border-radius:50%;background:linear-gradient(135deg,#f093fb,#f5576c);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 1.2rem;color:#fff}
+  .score-num{font-size:34px;font-weight:800;line-height:1}
+  .score-denom{font-size:13px;opacity:.8}
+  .result-title{font-size:clamp(18px,4vw,22px);font-weight:700;color:#1a1a2e;margin-bottom:6px}
+  .result-sub{font-size:13px;color:#888;margin-bottom:1.5rem;line-height:1.6;padding:0 .5rem}
+  .stars{font-size:26px;margin-bottom:12px;letter-spacing:4px}
+  @media(max-width:400px){body{padding:.5rem}.card{border-radius:18px}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <div class="badge">Derecho Procesal</div>
+    <h1>Juicio Ejecutivo</h1>
+    <p class="subtitle">Títulos, tramitación y obligaciones · 25 preguntas</p>
+  </div>
+  <div class="progress-label">
+    <span id="prog-text">Pregunta 1 de 25</span>
+    <span id="prog-pct">0%</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+
+  <div id="q-screen">
+    <div class="q-num" id="q-num">Pregunta 1</div>
+    <div class="q-text" id="q-text"></div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-next" disabled onclick="next()">Siguiente →</button>
+    </div>
+  </div>
+
+  <div class="result-screen" id="r-screen">
+    <div class="stars" id="stars"></div>
+    <div class="score-circle">
+      <div class="score-num" id="r-score">0</div>
+      <div class="score-denom">/25</div>
+    </div>
+    <div class="result-title" id="r-title"></div>
+    <div class="result-sub" id="r-sub"></div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="restart()">Reintentar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const Q=[
+  {q:"¿Cómo define el resumen al juicio ejecutivo?",opts:["Procedimiento de aplicación general, declarativo, cuyo objetivo es resolver controversias sobre la existencia de obligaciones","Procedimiento de aplicación general de carácter compulsivo, cuyo objetivo es obtener el cumplimiento de obligaciones que constan de un título ejecutivo","Procedimiento sumario aplicable solo cuando la naturaleza de la acción exige tramitación rápida","Procedimiento especial limitado a obligaciones de dinero contenidas en escrituras públicas"],ans:1,fb:"El juicio ejecutivo es un procedimiento de aplicación general de carácter compulsivo, cuyo objetivo es obtener el cumplimiento de las obligaciones que constan de un título o documento indubitado (título ejecutivo)."},
+  {q:"¿Cómo se clasifica el juicio ejecutivo atendiendo a la naturaleza de la obligación?",opts:["En procedimiento general y procedimiento especial","En obligaciones de dar, de hacer y de no hacer","En obligaciones líquidas y obligaciones liquidables","En obligaciones civiles y obligaciones mercantiles"],ans:1,fb:"Atendiendo a la naturaleza de la obligación, el juicio ejecutivo se clasifica en obligaciones de dar, de hacer y de no hacer. La distinción entre procedimiento general (art. 434 y ss.) y especial —como el de mínima cuantía— corresponde a las reglas que se aplican en su tramitación."},
+  {q:"¿Cuáles son los requisitos para iniciar un procedimiento ejecutivo?",opts:["Título ejecutivo, obligación líquida o liquidable, actualmente exigible y no prescrita","Solo que exista un título y que la obligación sea de dinero","Solo que la obligación esté reconocida judicialmente y exista demanda escrita","Que el deudor haya sido emplazado previamente y exista contrato escrito"],ans:0,fb:"Para iniciar un procedimiento ejecutivo se requiere: (1) un título ejecutivo que dé cuenta de una obligación determinada; (2) que la obligación sea líquida o liquidable; (3) que sea actualmente exigible (no sujeta a plazo o condición); y (4) que no se encuentre prescrita."},
+  {q:"Si la obligación que consta en el título ejecutivo aparece prescrita, ¿qué puede hacer el tribunal?",opts:["Debe esperar a que el ejecutado oponga la excepción de prescripción","Puede declarar de oficio la inadmisibilidad de la demanda ejecutiva","Debe acoger la demanda y derivar la cuestión al juicio ordinario","No tiene facultad alguna; solo el ejecutante puede desistirse"],ans:1,fb:"Si la prescripción consta en el propio título ejecutivo, el juez puede declarar de oficio la inadmisibilidad de la demanda ejecutiva, sin necesidad de que el ejecutado oponga la excepción."},
+  {q:"¿Qué es un título ejecutivo según el resumen?",opts:["El escrito de demanda mediante el cual el acreedor inicia el juicio","Un antecedente jurídico que da cuenta de una obligación actualmente exigible e indubitada y que otorga la acción para exigir judicialmente su cumplimiento","La sentencia condenatoria dictada en cualquier juicio civil","Una constancia notarial sobre la existencia de una deuda"],ans:1,fb:"El título ejecutivo es un antecedente jurídico que da cuenta de un hecho —una obligación actualmente exigible e indubitada— que otorga la acción para exigir por la vía judicial (coercitiva) su cumplimiento."},
+  {q:"¿Cuál de las siguientes sentencias constituye título ejecutivo conforme al art. 434 N°1 CPC?",opts:["Cualquier sentencia, esté firme o no","Solo las sentencias condenatorias civiles","La sentencia judicial firme, sea definitiva o interlocutoria","Únicamente las sentencias dictadas por la Corte Suprema"],ans:2,fb:"El art. 434 N°1 CPC señala como título ejecutivo la sentencia judicial firme, ya sea definitiva o interlocutoria. La firmeza es esencial para su carácter ejecutivo."},
+  {q:"¿Qué documento referido a la escritura pública constituye título ejecutivo?",opts:["Cualquier escritura privada protocolizada","La copia simple de la escritura pública","La copia autorizada de la escritura pública","Solo el original de la escritura pública"],ans:2,fb:"El art. 434 N°2 CPC reconoce como título ejecutivo la copia autorizada de escritura pública. Una copia simple no tiene esa calidad."},
+  {q:"Conforme al art. 434 N°3 CPC, ¿qué requisitos debe cumplir el acta de avenimiento para ser título ejecutivo?",opts:["Estar firmada solo por las partes y depositada en notaría","Haber sido pasada ante tribunal competente y autorizada por el ministro de fe o ante 2 testigos de actuación","Haber sido aprobada en segunda instancia por la Corte de Apelaciones","Constar en escritura pública otorgada con posterioridad al juicio"],ans:1,fb:"El acta de avenimiento es título ejecutivo cuando ha sido pasada ante tribunal competente y autorizada por el ministro de fe o ante 2 testigos de actuación."},
+  {q:"¿Cómo adquiere fuerza ejecutiva un instrumento privado conforme al art. 434 N°4 CPC?",opts:["Basta su sola exhibición ante el tribunal","Reconocido judicialmente (en forma expresa) o mandado a tener por reconocido en una gestión preparatoria de la vía ejecutiva","Mediante simple protocolización ante notario","Únicamente cuando lo reconoce la contraparte ante notario"],ans:1,fb:"El instrumento privado adquiere fuerza ejecutiva cuando es reconocido judicialmente en forma expresa o cuando es mandado a tener por reconocido, lo que se obtiene a través de una gestión preparatoria de la vía ejecutiva."},
+  {q:"La enumeración de títulos ejecutivos del art. 434 CPC, ¿es taxativa?",opts:["Sí, es absolutamente taxativa: solo esos siete numerales son títulos ejecutivos","No es taxativa, pues el art. 434 N°7 reconoce como título 'cualquier otro título al que las leyes den fuerza ejecutiva'","Es taxativa, pero la jurisprudencia permite ampliarla por analogía","Es taxativa solo respecto de los títulos extrajudiciales"],ans:1,fb:"La enumeración del art. 434 CPC no es taxativa: el N°7 expresamente reconoce como título ejecutivo 'cualquier otro título al que las leyes den fuerza ejecutiva', lo que confirma la existencia de otros títulos fuera del listado."},
+  {q:"¿De qué dos formas puede iniciarse un procedimiento ejecutivo?",opts:["Únicamente mediante demanda escrita","Mediante interposición de demanda ejecutiva o mediante una gestión preparatoria de la vía ejecutiva","Mediante demanda verbal ante el tribunal o por solicitud notarial","Solo mediante gestión preparatoria, nunca por demanda directa"],ans:1,fb:"El procedimiento ejecutivo puede iniciarse mediante (1) la interposición de una demanda ejecutiva —que debe cumplir los requisitos del art. 254 CPC, los requisitos para iniciar un procedimiento ejecutivo y los comunes a todo escrito— o bien (2) mediante una gestión preparatoria de la vía ejecutiva."},
+  {q:"¿Qué es la gestión preparatoria de la vía ejecutiva?",opts:["Una etapa probatoria previa al juicio ordinario","Una gestión judicial contenciosa tendiente a crear un título ejecutivo, ya sea construyéndolo directamente, complementando antecedentes o supliendo imperfecciones de un título ya existente","Una mediación obligatoria antes de iniciar la ejecución","Una solicitud al notario para autorizar copias de escrituras públicas"],ans:1,fb:"La gestión preparatoria de la vía ejecutiva es una gestión judicial contenciosa tendiente a crear un título ejecutivo, ya sea construyéndolo directamente, complementando determinados antecedentes o supliendo imperfecciones de un título que ya existe."},
+  {q:"Una vez admitida la demanda ejecutiva, ¿cuál es la providencia que dicta el tribunal en el cuaderno principal y qué consecuencia produce en el cuaderno de apremio?",opts:["Dicta 'auto de prueba' en el principal y 'embargo definitivo' en el apremio","Dicta 'despáchese' en el cuaderno principal, lo que da origen al 'requiérase de pago' (mandamiento de ejecución y embargo) en el cuaderno de apremio","Dicta 'traslado' en ambos cuadernos simultáneamente","No dicta providencia alguna hasta que el deudor sea notificado"],ans:1,fb:"Admitida la demanda, el tribunal dicta en el cuaderno principal la providencia 'despáchese', una auto orden que provoca que en el cuaderno de apremio se dicte la orden de mandamiento de ejecución y embargo llamada 'requiérase de pago'."},
+  {q:"¿Cuáles son los tres mandamientos que contiene la orden 'requiérase de pago'?",opts:["Notificar, contestar y conciliar","(1) Requerir de pago al deudor; (2) embargar bienes suficientes con intereses y costas si no paga en el acto; (3) designar un depositario provisional para los bienes embargados","(1) Citar a audiencia; (2) recibir la causa a prueba; (3) dictar sentencia definitiva","(1) Pagar costas; (2) rendir caución; (3) prestar juramento"],ans:1,fb:"El mandamiento de ejecución y embargo contiene tres órdenes: (1) requerir de pago al deudor; (2) embargar bienes suficientes con intereses y costas si no paga en el acto; y (3) designar un depositario provisional para que se encargue de los bienes embargados."},
+  {q:"Tras el requerimiento de pago hecho personalmente al ejecutado, ¿de qué plazo dispone para reaccionar y cuáles son sus posibles actitudes?",opts:["5 días: pagar, no hacer nada o pedir mediación","8 días: (1) pagar la deuda y poner término al procedimiento; (2) no hacer nada; o (3) oponer excepciones","15 días: solo pagar o desistirse","30 días: contestar, oponer excepciones o pedir prórroga"],ans:1,fb:"El ejecutado dispone de un plazo de 8 días desde el requerimiento personal para asumir una de tres actitudes: (1) pagar la deuda, lo que pone término al procedimiento; (2) no hacer nada; o (3) oponer excepciones."},
+  {q:"Si el ejecutado no hace nada dentro del plazo de 8 días, ¿qué efecto produce esa pasividad?",opts:["Se declara abandonado el procedimiento ejecutivo","El 'mandamiento de ejecución y embargo' hace las veces de sentencia definitiva, procediendo al embargo y remate de los bienes del deudor","Se dicta automáticamente una sentencia absolutoria a su favor","Se cita a una audiencia de conciliación obligatoria"],ans:1,fb:"Si el ejecutado no hace nada en el plazo de 8 días, el 'mandamiento de ejecución y embargo' hace las veces de sentencia definitiva, procediéndose directamente al embargo de los bienes del deudor y al remate de ellos."},
+  {q:"Si el ejecutado opone excepciones, ¿qué traslado debe darse al ejecutante y por qué plazo?",opts:["Traslado de 3 días","Traslado de 4 días","Traslado de 6 días","Traslado de 10 días"],ans:1,fb:"Si el ejecutado interpone escrito de excepciones, se da traslado al ejecutante por un plazo de 4 días para que se oponga a las excepciones."},
+  {q:"¿Qué carácter tienen las excepciones que se pueden oponer en el juicio ejecutivo?",opts:["Son las mismas que en el juicio ordinario, divididas en dilatorias y perentorias","Son taxativas, contenidas en el art. 464 CPC, y no se dividen entre dilatorias y perentorias","Son ilimitadas, pudiendo oponerse cualquier defensa","Solo se admiten las dilatorias del art. 303 CPC"],ans:1,fb:"En el juicio ejecutivo las excepciones son taxativas: solo pueden oponerse las contenidas en el art. 464 CPC y, a diferencia del juicio ordinario, estas excepciones no se dividen entre dilatorias y perentorias."},
+  {q:"Si el tribunal estima admisibles en cuanto a la forma las excepciones y resuelve recibir la causa a prueba, ¿cuál es la duración del término probatorio ordinario?",opts:["5 días","8 días","10 días","20 días"],ans:2,fb:"El término probatorio ordinario en el juicio ejecutivo es de 10 días. Existen además términos extraordinarios (en plazo acordado por las partes) y especiales (en caso de entorpecimiento)."},
+  {q:"¿De qué plazo disponen las partes para realizar observaciones a la prueba en el juicio ejecutivo?",opts:["3 días","6 días","10 días","No existe etapa de observaciones a la prueba"],ans:1,fb:"Vencido el término probatorio, las partes disponen de un plazo de 6 días para realizar observaciones a la prueba. Terminado ese plazo, el tribunal cita a las partes a oír sentencia."},
+  {q:"¿En qué plazo debe dictarse la sentencia definitiva una vez vencido el plazo de observaciones a la prueba y citadas las partes a oír sentencia?",opts:["5 días","10 días","15 días","30 días"],ans:1,fb:"Una vez citadas las partes a oír sentencia, el tribunal dictará la sentencia definitiva en un plazo de 10 días."},
+  {q:"¿Cómo puede clasificarse la sentencia definitiva condenatoria en el juicio ejecutivo de obligación de dar?",opts:["De pago (cuando se embarga la especie o cuerpo cierto debido o una cantidad de dinero) o de remate (cuando se embargan bienes que deben rematarse para pagar al ejecutante)","Definitiva o interlocutoria","De única instancia o apelable","De condena o declarativa"],ans:0,fb:"La sentencia condenatoria —que rechaza todas las excepciones— puede ser de pago, cuando se embarga la especie o cuerpo cierto debido o una cantidad de dinero, o de remate, cuando se embargan bienes que deben rematarse para pagar al ejecutante. La sentencia absolutoria, en cambio, acoge una o más excepciones."},
+  {q:"En el procedimiento ejecutivo de obligación de hacer, ¿cómo se denomina el mandamiento que corresponde al 'mandamiento de ejecución y embargo' del procedimiento de dar?",opts:["'Mandamiento de destruir la obra'","'Mandamiento de ejecución y apercibimiento'","'Mandamiento de pago'","'Mandamiento de cumplimiento forzado'"],ans:1,fb:"En el procedimiento ejecutivo de obligación de hacer, el mandamiento equivalente se denomina 'mandamiento de ejecución y apercibimiento', a diferencia del 'mandamiento de ejecución y embargo' propio del procedimiento de dar. Además, en este procedimiento se agrega la excepción de 'imposibilidad absoluta para la ejecución actual de la obra debida'."},
+  {q:"Tratándose de una obligación de hacer, si el ejecutado no realiza la obra ante el requerimiento, ¿qué derechos tiene el ejecutante?",opts:["Solo puede pedir que el tribunal lo declare en rebeldía","(1) Que se realice la obra por un tercero a expensas del deudor, o (2) que se apremie al deudor","Únicamente pedir el pago de perjuicios al deudor","Solicitar el embargo inmediato de bienes del deudor para subastarlos"],ans:1,fb:"Si el ejecutado no hace nada ante el requerimiento, el ejecutante puede optar entre dos derechos: (1) que se realice la obra por un tercero a expensas del deudor, o (2) que se apremie al deudor."},
+  {q:"En el procedimiento ejecutivo de obligación de no hacer, si la obra no es susceptible de destruirse, ¿en qué se convierte la obligación?",opts:["Se extingue por imposibilidad sobreviniente y se archiva la causa","Se convierte en el pago de perjuicios","Se traslada al procedimiento ejecutivo de obligación de dar","Subsiste como obligación natural sin acción"],ans:1,fb:"En el procedimiento ejecutivo de obligación de no hacer, si la obra puede destruirse el ejecutante puede pedir su destrucción por un tercero a expensas del deudor o pedir apremios. Pero si la obra no es susceptible de destruirse, la obligación se convierte en el pago de perjuicios. El mandamiento equivalente en este procedimiento se denomina 'mandamiento de destruir la obra'."}
+];
+
+const labels=['A','B','C','D'];
+let cur=0,score=0,answered=false;
+
+function render(){
+  const q=Q[cur];
+  const pct=Math.round(cur/Q.length*100);
+  document.getElementById('q-num').textContent='Pregunta '+(cur+1);
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-text').textContent='Pregunta '+(cur+1)+' de '+Q.length;
+  document.getElementById('prog-pct').textContent=pct+'%';
+  const fb=document.getElementById('feedback');
+  fb.className='feedback';fb.textContent='';
+  document.getElementById('btn-next').disabled=true;
+  answered=false;
+  const opts=document.getElementById('options');
+  opts.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const d=document.createElement('div');
+    d.className='option';
+    d.innerHTML='<div class="opt-icon">'+labels[i]+'</div><span>'+o+'</span>';
+    d.onclick=()=>pick(i,d);
+    opts.appendChild(d);
+  });
+}
+
+function pick(i,el){
+  if(answered)return;
+  answered=true;
+  const q=Q[cur];
+  document.querySelectorAll('.option').forEach(o=>o.classList.add('disabled'));
+  if(i===q.ans){el.classList.add('correct');score++;showFb(true,q.fb);}
+  else{el.classList.add('wrong');document.querySelectorAll('.option')[q.ans].classList.add('correct');showFb(false,q.fb);}
+  document.getElementById('btn-next').disabled=false;
+}
+
+function showFb(ok,text){
+  const fb=document.getElementById('feedback');
+  fb.className='feedback show '+(ok?'ok':'fail');
+  fb.textContent=(ok?'✓ Correcto — ':'✗ Incorrecto — ')+text;
+}
+
+function next(){
+  cur++;
+  if(cur>=Q.length){showResult();return;}
+  render();
+}
+
+function showResult(){
+  document.getElementById('q-screen').style.display='none';
+  document.getElementById('r-screen').classList.add('show');
+  document.getElementById('r-score').textContent=score;
+  document.getElementById('prog-fill').style.width='100%';
+  document.getElementById('prog-text').textContent='Completado';
+  document.getElementById('prog-pct').textContent='100%';
+  const pct=score/Q.length;
+  let title,sub,stars;
+  if(pct===1){title='¡Perfecto!';sub='Dominaste el juicio ejecutivo de principio a fin. ¡Excelente!';stars='⭐⭐⭐'}
+  else if(pct>=.75){title='¡Muy bien!';sub='Sólido manejo del procedimiento ejecutivo. Unos pocos detalles más y lo tienes dominado.';stars='⭐⭐'}
+  else if(pct>=.5){title='Vas por buen camino';sub='Repasa las preguntas que fallaste —sobre todo títulos ejecutivos y plazos— y vuelve a intentarlo.';stars='⭐'}
+  else{title='Sigue estudiando';sub='Revisa el resumen del juicio ejecutivo con calma y da otra oportunidad al quiz.';stars='📚'}
+  document.getElementById('stars').textContent=stars;
+  document.getElementById('r-title').textContent=title;
+  document.getElementById('r-sub').textContent=sub;
+}
+
+function restart(){
+  cur=0;score=0;answered=false;
+  document.getElementById('r-screen').classList.remove('show');
+  document.getElementById('q-screen').style.display='block';
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
