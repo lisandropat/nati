@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audiolibro · Lector de PDF</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700;9..144,900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ebe3d2;
+    --paper: #f7f1e1;
+    --ink: #1f1a14;
+    --ink-soft: #5a4e38;
+    --ink-faint: #8b7d62;
+    --accent: #9c3a1c;
+    --accent-warm: #c97a3b;
+    --highlight: #f4d97a;
+    --border: #c8b896;
+    --shadow: rgba(31, 26, 20, 0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Fraunces', Georgia, serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 32px 20px 80px;
+    background-image:
+      radial-gradient(at 20% 10%, rgba(201, 122, 59, 0.08) 0%, transparent 50%),
+      radial-gradient(at 80% 90%, rgba(156, 58, 28, 0.06) 0%, transparent 50%);
+  }
+
+  .container {
+    max-width: 880px;
+    margin: 0 auto;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  header h1 {
+    font-weight: 900;
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+
+  header h1 .ornament {
+    color: var(--accent);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  header p {
+    color: var(--ink-soft);
+    font-size: 1.1rem;
+    font-style: italic;
+  }
+
+  .upload-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    background: var(--paper);
+    border: 2px dashed var(--border);
+    border-radius: 6px;
+    padding: 56px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 32px;
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--accent);
+    background: #faf5e6;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px var(--shadow);
+  }
+
+  .upload-zone svg {
+    width: 56px;
+    height: 56px;
+    color: var(--accent);
+    margin-bottom: 20px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.3s ease;
+  }
+
+  .upload-zone:hover svg {
+    transform: translateY(-2px);
+  }
+
+  .upload-zone h2 {
+    font-weight: 500;
+    font-size: 1.4rem;
+    margin-bottom: 8px;
+  }
+
+  .upload-zone p {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+  }
+
+  .upload-zone input[type="file"] {
+    display: none;
+  }
+
+  .file-info {
+    margin-top: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--accent);
+  }
+
+  .reader {
+    display: none;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .reader.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .controls {
+    background: var(--paper);
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 12px var(--shadow);
+    position: sticky;
+    top: 16px;
+    z-index: 10;
+  }
+
+  .play-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  button.ctrl {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 50%;
+    width: 52px;
+    height: 52px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+  }
+
+  button.ctrl:hover {
+    background: var(--accent);
+    transform: scale(1.05);
+  }
+
+  button.ctrl:disabled {
+    background: var(--ink-faint);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  button.ctrl.primary {
+    width: 64px;
+    height: 64px;
+    background: var(--accent);
+  }
+
+  button.ctrl.primary:hover {
+    background: var(--ink);
+  }
+
+  button.ctrl svg {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+  }
+
+  button.ctrl.primary svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .progress-info {
+    flex: 1;
+    min-width: 200px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  .settings-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 600px) {
+    .settings-row { grid-template-columns: 1fr; }
+  }
+
+  .setting {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .setting label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    font-family: 'JetBrains Mono', monospace;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .setting label .val {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .setting select, .setting input[type="range"] {
+    width: 100%;
+  }
+
+  .setting select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 8px 10px;
+    font-family: inherit;
+    color: var(--ink);
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+
+  .setting select:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    height: 24px;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    margin-top: -6.5px;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-moz-range-track {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+  }
+
+  .text-content {
+    background: var(--paper);
+    border-radius: 4px;
+    padding: 48px clamp(24px, 5vw, 56px);
+    box-shadow: 0 4px 20px var(--shadow);
+    font-size: 1.15rem;
+    line-height: 1.75;
+    color: var(--ink);
+    max-height: 60vh;
+    overflow-y: auto;
+    position: relative;
+  }
+
+  .text-content::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .text-content::-webkit-scrollbar-track {
+    background: var(--bg);
+  }
+
+  .text-content::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+
+  .text-content .chunk {
+    cursor: pointer;
+    padding: 2px 0;
+    border-radius: 2px;
+    transition: background 0.2s ease;
+  }
+
+  .text-content .chunk:hover {
+    background: rgba(244, 217, 122, 0.3);
+  }
+
+  .text-content .chunk.active {
+    background: var(--highlight);
+    box-shadow: 0 0 0 4px var(--highlight);
+  }
+
+  .page-break {
+    display: block;
+    margin: 24px 0;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.2em;
+  }
+
+  .page-break::before,
+  .page-break::after {
+    content: '· · ·';
+    margin: 0 12px;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+
+  .loading .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .error {
+    background: #fce8e0;
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px;
+    color: var(--accent);
+    border-radius: 2px;
+    margin-bottom: 16px;
+    font-size: 0.95rem;
+  }
+
+  footer {
+    margin-top: 60px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Audio<span class="ornament">·</span>libro</h1>
+      <p>Sube un PDF y escúchalo en voz alta</p>
+    </header>
+
+    <label class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" accept="application/pdf">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
+        <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/>
+        <path d="M12 11v6M9 14l3-3 3 3"/>
+      </svg>
+      <h2>Arrastra un PDF o haz clic aquí</h2>
+      <p>El archivo se procesa localmente en tu navegador</p>
+      <div class="file-info" id="fileInfo"></div>
+    </label>
+
+    <div id="errorBox"></div>
+
+    <div class="reader" id="reader">
+      <div class="controls">
+        <div class="play-row">
+          <button class="ctrl" id="rewindBtn" title="Retroceder">
+            <svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6L21 6v12l-9.5-6z"/></svg>
+          </button>
+          <button class="ctrl primary" id="playBtn" title="Reproducir">
+            <svg viewBox="0 0 24 24" id="playIcon"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+          <button class="ctrl" id="forwardBtn" title="Avanzar">
+            <svg viewBox="0 0 24 24"><path d="M13 6v12l8.5-6L13 6zM12 6l-9.5 6 9.5 6V6z" transform="scale(-1, 1) translate(-24, 0)"/></svg>
+          </button>
+          <button class="ctrl" id="stopBtn" title="Detener">
+            <svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
+          </button>
+          <div class="progress-info">
+            <div id="progressText">— / —</div>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="setting">
+            <label>Voz <span class="val" id="voiceCount"></span></label>
+            <select id="voiceSelect"></select>
+          </div>
+          <div class="setting">
+            <label>Velocidad <span class="val" id="rateVal">1.0×</span></label>
+            <input type="range" id="rateSlider" min="0.5" max="2" step="0.1" value="1">
+          </div>
+          <div class="setting">
+            <label>Tono <span class="val" id="pitchVal">1.0</span></label>
+            <input type="range" id="pitchSlider" min="0.5" max="1.5" step="0.1" value="1">
+          </div>
+          <div class="setting">
+            <label>Volumen <span class="val" id="volVal">100%</span></label>
+            <input type="range" id="volSlider" min="0" max="1" step="0.05" value="1">
+          </div>
+        </div>
+      </div>
+
+      <div class="text-content" id="textContent">
+        <div class="loading"><span class="spinner"></span>Procesando PDF...</div>
+      </div>
+    </div>
+
+    <footer>
+      Tip: haz clic en cualquier párrafo para empezar a leer desde ahí.
+    </footer>
+  </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  const $ = id => document.getElementById(id);
+  const uploadZone = $('uploadZone');
+  const fileInput = $('fileInput');
+  const fileInfo = $('fileInfo');
+  const reader = $('reader');
+  const textContent = $('textContent');
+  const errorBox = $('errorBox');
+  const playBtn = $('playBtn');
+  const playIcon = $('playIcon');
+  const stopBtn = $('stopBtn');
+  const rewindBtn = $('rewindBtn');
+  const forwardBtn = $('forwardBtn');
+  const voiceSelect = $('voiceSelect');
+  const voiceCount = $('voiceCount');
+  const rateSlider = $('rateSlider');
+  const rateVal = $('rateVal');
+  const pitchSlider = $('pitchSlider');
+  const pitchVal = $('pitchVal');
+  const volSlider = $('volSlider');
+  const volVal = $('volVal');
+  const progressText = $('progressText');
+  const progressFill = $('progressFill');
+
+  const PLAY_SVG = '<path d="M8 5v14l11-7z"/>';
+  const PAUSE_SVG = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+
+  let chunks = [];        // array of { text, pageNum, el }
+  let currentIdx = 0;
+  let isPlaying = false;
+  let voices = [];
+  let selectedVoice = null;
+
+  // ---------- Voces ----------
+  function loadVoices() {
+    voices = speechSynthesis.getVoices();
+    const spanish = voices.filter(v => v.lang.startsWith('es'));
+    const others = voices.filter(v => !v.lang.startsWith('es'));
+    const ordered = [...spanish, ...others];
+
+    voiceSelect.innerHTML = '';
+    ordered.forEach((v, i) => {
+      const opt = document.createElement('option');
+      opt.value = voices.indexOf(v);
+      opt.textContent = `${v.name} (${v.lang})${v.default ? ' — predeterminada' : ''}`;
+      voiceSelect.appendChild(opt);
+    });
+
+    voiceCount.textContent = `${voices.length} disponibles`;
+
+    if (spanish.length && !selectedVoice) {
+      selectedVoice = spanish[0];
+      voiceSelect.value = voices.indexOf(selectedVoice);
+    } else if (!selectedVoice && voices.length) {
+      selectedVoice = voices[0];
+      voiceSelect.value = 0;
+    }
+  }
+
+  speechSynthesis.addEventListener('voiceschanged', loadVoices);
+  loadVoices();
+
+  voiceSelect.addEventListener('change', e => {
+    selectedVoice = voices[parseInt(e.target.value, 10)];
+  });
+
+  // ---------- Sliders ----------
+  rateSlider.addEventListener('input', e => rateVal.textContent = `${parseFloat(e.target.value).toFixed(1)}×`);
+  pitchSlider.addEventListener('input', e => pitchVal.textContent = parseFloat(e.target.value).toFixed(1));
+  volSlider.addEventListener('input', e => volVal.textContent = `${Math.round(e.target.value * 100)}%`);
+
+  // ---------- Carga del PDF ----------
+  uploadZone.addEventListener('click', () => fileInput.click());
+
+  uploadZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    uploadZone.classList.add('dragover');
+  });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+
+  fileInput.addEventListener('change', e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  });
+
+  function showError(msg) {
+    errorBox.innerHTML = `<div class="error">${msg}</div>`;
+    setTimeout(() => errorBox.innerHTML = '', 5000);
+  }
+
+  async function handleFile(file) {
+    if (!file.type.includes('pdf')) {
+      showError('Por favor, sube un archivo PDF.');
+      return;
+    }
+
+    stopPlayback();
+    fileInfo.textContent = `${file.name} · ${(file.size / 1024).toFixed(1)} KB`;
+    reader.classList.add('active');
+    textContent.innerHTML = '<div class="loading"><span class="spinner"></span>Extrayendo texto del PDF...</div>';
+
+    try {
+      const buf = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+
+      const allChunks = [];
+      const pageTexts = [];
+
+      for (let p = 1; p <= pdf.numPages; p++) {
+        const page = await pdf.getPage(p);
+        const content = await page.getTextContent();
+
+        // Reconstruir párrafos con saltos de línea
+        let lastY = null;
+        let pageText = '';
+        content.items.forEach(item => {
+          if (!item.str) return;
+          if (lastY !== null && Math.abs(item.transform[5] - lastY) > 5) {
+            pageText += '\n';
+          }
+          pageText += item.str + ' ';
+          lastY = item.transform[5];
+        });
+
+        pageTexts.push({ pageNum: p, text: pageText.trim() });
+      }
+
+      // Dividir en chunks (oraciones)
+      pageTexts.forEach(({ pageNum, text }) => {
+        const sentences = splitIntoChunks(text);
+        sentences.forEach(s => {
+          if (s.trim()) allChunks.push({ text: s.trim(), pageNum });
+        });
+      });
+
+      if (!allChunks.length) {
+        textContent.innerHTML = '<div class="error">No se pudo extraer texto. El PDF puede ser una imagen escaneada (necesitarías OCR).</div>';
+        return;
+      }
+
+      chunks = allChunks;
+      currentIdx = 0;
+      renderText();
+      updateProgress();
+    } catch (err) {
+      console.error(err);
+      textContent.innerHTML = `<div class="error">Error al leer el PDF: ${err.message}</div>`;
+    }
+  }
+
+  function splitIntoChunks(text) {
+    // Limpiar saltos de línea sospechosos en mitad de oración
+    text = text.replace(/-\n/g, '').replace(/\n+/g, ' ').replace(/\s+/g, ' ');
+    // Dividir por oraciones manteniendo puntuación
+    const matches = text.match(/[^.!?]+[.!?]+["')\]]*|[^.!?]+$/g) || [text];
+    return matches.map(s => s.trim()).filter(Boolean);
+  }
+
+  function renderText() {
+    textContent.innerHTML = '';
+    let lastPage = 0;
+    chunks.forEach((chunk, i) => {
+      if (chunk.pageNum !== lastPage) {
+        const pb = document.createElement('div');
+        pb.className = 'page-break';
+        pb.textContent = `página ${chunk.pageNum}`;
+        textContent.appendChild(pb);
+        lastPage = chunk.pageNum;
+      }
+      const span = document.createElement('span');
+      span.className = 'chunk';
+      span.textContent = chunk.text + ' ';
+      span.dataset.idx = i;
+      span.addEventListener('click', () => {
+        const wasPlaying = isPlaying;
+        stopPlayback();
+        currentIdx = i;
+        highlightCurrent();
+        if (wasPlaying) play();
+      });
+      chunk.el = span;
+      textContent.appendChild(span);
+    });
+    highlightCurrent();
+  }
+
+  // ---------- Reproducción ----------
+  function play() {
+    if (!chunks.length) return;
+    if (currentIdx >= chunks.length) currentIdx = 0;
+    isPlaying = true;
+    playIcon.innerHTML = PAUSE_SVG;
+    speakCurrent();
+  }
+
+  function speakCurrent() {
+    if (!isPlaying || currentIdx >= chunks.length) {
+      if (currentIdx >= chunks.length) stopPlayback();
+      return;
+    }
+    speechSynthesis.cancel();
+
+    const utt = new SpeechSynthesisUtterance(chunks[currentIdx].text);
+    if (selectedVoice) {
+      utt.voice = selectedVoice;
+      utt.lang = selectedVoice.lang;
+    }
+    utt.rate = parseFloat(rateSlider.value);
+    utt.pitch = parseFloat(pitchSlider.value);
+    utt.volume = parseFloat(volSlider.value);
+
+    utt.onend = () => {
+      if (!isPlaying) return;
+      currentIdx++;
+      updateProgress();
+      if (currentIdx < chunks.length) {
+        highlightCurrent();
+        speakCurrent();
+      } else {
+        stopPlayback();
+      }
+    };
+
+    utt.onerror = e => {
+      // 'interrupted' es normal cuando hacemos cancel(); no lo trates como error
+      if (e.error === 'interrupted' || e.error === 'canceled') return;
+      console.error('TTS error:', e);
+      isPlaying = false;
+      playIcon.innerHTML = PLAY_SVG;
+    };
+
+    highlightCurrent();
+    speechSynthesis.speak(utt);
+  }
+
+  function pausePlayback() {
+    isPlaying = false;
+    speechSynthesis.cancel();
+    playIcon.innerHTML = PLAY_SVG;
+  }
+
+  function stopPlayback() {
+    isPlaying = false;
+    speechSynthesis.cancel();
+    currentIdx = 0;
+    playIcon.innerHTML = PLAY_SVG;
+    highlightCurrent();
+    updateProgress();
+  }
+
+  function highlightCurrent() {
+    chunks.forEach(c => c.el && c.el.classList.remove('active'));
+    if (chunks[currentIdx] && chunks[currentIdx].el) {
+      chunks[currentIdx].el.classList.add('active');
+      chunks[currentIdx].el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  function updateProgress() {
+    progressText.textContent = chunks.length
+      ? `${currentIdx + 1} / ${chunks.length} · página ${chunks[currentIdx]?.pageNum ?? '—'}`
+      : '— / —';
+    progressFill.style.width = chunks.length
+      ? `${((currentIdx + 1) / chunks.length) * 100}%`
+      : '0%';
+  }
+
+  // Botones
+  playBtn.addEventListener('click', () => {
+    if (isPlaying) pausePlayback();
+    else play();
+  });
+  stopBtn.addEventListener('click', stopPlayback);
+  rewindBtn.addEventListener('click', () => {
+    if (!chunks.length) return;
+    const wasPlaying = isPlaying;
+    pausePlayback();
+    currentIdx = Math.max(0, currentIdx - 1);
+    highlightCurrent();
+    updateProgress();
+    if (wasPlaying) play();
+  });
+  forwardBtn.addEventListener('click', () => {
+    if (!chunks.length) return;
+    const wasPlaying = isPlaying;
+    pausePlayback();
+    currentIdx = Math.min(chunks.length - 1, currentIdx + 1);
+    highlightCurrent();
+    updateProgress();
+    if (wasPlaying) play();
+  });
+
+  // Atajos de teclado
+  document.addEventListener('keydown', e => {
+    if (e.target.matches('input, select, textarea')) return;
+    if (e.code === 'Space') { e.preventDefault(); playBtn.click(); }
+    if (e.code === 'ArrowLeft') rewindBtn.click();
+    if (e.code === 'ArrowRight') forwardBtn.click();
+  });
+
+  // Hack para Chrome: mantener vivo el motor TTS en lecturas largas
+  setInterval(() => {
+    if (isPlaying && !speechSynthesis.speaking && !speechSynthesis.pending) {
+      // El motor murió; reintentar oración actual
+      speakCurrent();
+    }
+  }, 1500);
+</script>
+</body>
+</html>
